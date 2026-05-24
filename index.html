@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prompt Manager</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">P</div>
+          <div>
+            <h1>Prompt Manager</h1>
+            <p>Documentos dinámicos</p>
+          </div>
+        </div>
+
+        <div class="sidebar-actions">
+          <button class="primary-button" id="newProjectBtn">Nuevo proyecto</button>
+          <button class="ghost-button" id="importBtn">Importar</button>
+          <input type="file" id="importFile" accept=".json,.txt,text/plain,application/json" hidden>
+        </div>
+
+        <label class="search-box">
+          <span>Buscar</span>
+          <input id="globalSearch" type="search" placeholder="Contenido, tag, seccion...">
+        </label>
+
+        <div class="sidebar-tools">
+          <button class="icon-text-button" id="themeToggle" title="Cambiar tema">Tema</button>
+          <button class="icon-text-button" id="backupBtn" title="Exportar todos">Backup</button>
+        </div>
+
+        <div class="project-sort">
+          <span>Orden</span>
+          <select id="sortSelect">
+            <option value="updatedDesc">Recientes</option>
+            <option value="createdDesc">Creados</option>
+            <option value="nameAsc">Nombre A-Z</option>
+          </select>
+        </div>
+
+        <nav id="projectList" class="project-list" aria-label="Proyectos"></nav>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="projectMeta">Sin proyecto seleccionado</p>
+            <h2 id="projectTitle">Crea o importa un documento</h2>
+          </div>
+          <div class="topbar-actions">
+            <button class="ghost-button" id="duplicateBtn">Duplicar</button>
+            <button class="ghost-button" id="exportBtn">Exportar</button>
+            <button class="danger-button" id="deleteBtn">Eliminar</button>
+          </div>
+        </header>
+
+        <section class="composer" id="composer">
+          <div class="composer-head">
+            <div>
+              <h3>Entrada estructurada</h3>
+              <p>Pega un bloque completo. Cada linea con @ crea una seccion nueva.</p>
+            </div>
+            <div class="composer-actions">
+              <button class="ghost-button" id="exampleBtn">Ejemplo</button>
+              <button class="primary-button" id="parseBtn">Parsear y guardar</button>
+            </div>
+          </div>
+          <textarea id="sourceInput" spellcheck="false" placeholder="@PROJECT: Galaxies&#10;@GENRE: Space Trance&#10;&#10;@SUNO&#10;prompt..."></textarea>
+        </section>
+
+        <section class="project-panel" id="projectPanel" hidden>
+          <div class="project-toolbar">
+            <div class="stats" id="stats"></div>
+            <div class="bulk-actions">
+              <button class="ghost-button" id="copySectionBtn">Copiar seccion</button>
+              <button class="ghost-button" id="markSectionUsedBtn">Marcar usada</button>
+              <button class="ghost-button" id="addItemBtn">Agregar item</button>
+              <button class="ghost-button" id="editSectionBtn">Editar seccion</button>
+            </div>
+          </div>
+
+          <div class="tabs" id="sectionTabs" role="tablist"></div>
+          <div class="section-summary" id="sectionSummary"></div>
+          <div class="virtual-list" id="itemList"></div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="editDialog">
+      <form method="dialog" class="dialog-card">
+        <h3 id="dialogTitle">Editar</h3>
+        <label>
+          <span id="dialogLabel">Contenido</span>
+          <textarea id="dialogText" spellcheck="false"></textarea>
+        </label>
+        <div class="dialog-actions">
+          <button class="ghost-button" value="cancel">Cancelar</button>
+          <button class="primary-button" id="dialogSave" value="default">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
