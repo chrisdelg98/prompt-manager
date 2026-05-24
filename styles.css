@@ -128,31 +128,7 @@ body:not(.sidebar-open) .sidebar {
 }
 
 .sidebar-close {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.sidebar-close:hover {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-.sidebar-close svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
+  display: none;
 }
 
 .menu-toggle {
@@ -707,9 +683,13 @@ textarea::placeholder {
 .topbar {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
+  gap: 16px;
   margin-bottom: 24px;
+}
+
+.project-heading {
+  flex: 1;
+  min-width: 0;
 }
 
 .breadcrumb {
@@ -1539,6 +1519,34 @@ dialog::backdrop {
     overflow-x: hidden;
   }
 
+  .sidebar-close {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .sidebar-close:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  .sidebar-close svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
   .sidebar-backdrop {
     display: block;
     position: fixed;
@@ -1565,10 +1573,6 @@ dialog::backdrop {
     gap: 12px;
   }
 
-  .topbar .project-heading {
-    flex: 1;
-    min-width: 0;
-  }
 
   .topbar-actions {
     width: 100%;
