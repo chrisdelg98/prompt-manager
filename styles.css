@@ -219,8 +219,9 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 0 16px;
+  min-height: 34px;
+  padding: 0 13px;
+  font-size: 14px;
   white-space: nowrap;
 }
 
@@ -364,8 +365,21 @@ textarea::placeholder {
   border-color: rgba(52, 120, 255, 0.42);
 }
 
+.project-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
 .project-card strong {
   line-height: 1.2;
+}
+
+.card-fav {
+  flex-shrink: 0;
+  color: var(--warn);
+  font-size: 11px;
 }
 
 .project-card small {
@@ -436,6 +450,35 @@ textarea::placeholder {
   border-color: rgba(33, 215, 137, 0.35);
 }
 
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: 11px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  transition-delay: 0ms;
+  z-index: 10;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+  transition-delay: 500ms;
+}
+
 .workspace {
   min-width: 0;
   padding: 28px;
@@ -472,6 +515,10 @@ textarea::placeholder {
   height: 34px;
   background: transparent;
   color: var(--warn);
+}
+
+.star-button.favorite-icon svg {
+  fill: currentColor;
 }
 
 .star-button svg {
@@ -708,8 +755,8 @@ textarea {
 
 .tabs-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 62px;
-  margin-bottom: 22px;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  margin-bottom: 16px;
   overflow: hidden;
   box-shadow: none;
 }
@@ -722,12 +769,13 @@ textarea {
 .tab {
   position: relative;
   flex: 0 0 auto;
-  min-width: 112px;
-  min-height: 58px;
-  padding: 0 16px;
+  min-width: 96px;
+  min-height: 44px;
+  padding: 0 14px;
   background: transparent;
   color: var(--text);
   border: 0;
+  font-size: 13px;
 }
 
 .tab.active::after {
@@ -754,9 +802,52 @@ textarea {
 
 .add-tab {
   width: 100%;
-  height: 58px;
+  height: 44px;
   border-left: 1px solid var(--line);
   border-radius: 0;
+}
+
+.proj-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.proj-stat {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.proj-stat b {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.proj-stat span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.proj-date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.proj-date b {
+  color: var(--text);
+  font-weight: 500;
 }
 
 .dashboard-grid {

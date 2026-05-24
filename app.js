@@ -222,10 +222,8 @@ function renderProjectPage() {
   if (state.activeSection >= project.sections.length) state.activeSection = OVERVIEW_INDEX;
 
   renderHeader(project.metadata.PROJECT || "Untitled Project", `Biblioteca / ${project.metadata.PROJECT || "Untitled Project"}`, [
-    fact("CREADO", formatDate(project.createdAt, false)),
     fact("GENRE", project.metadata.GENRE || project.tags?.[0] || "Sin categoria", true),
-    fact("SEC", `${project.sections.length} secciones`),
-    fact("ITEMS", `${countItems(project)} items`)
+    fact("CREADO", formatDate(project.createdAt, false))
   ].join(""));
   renderProjectFavoriteButton(project);
 
@@ -243,13 +241,17 @@ function renderProjectSummary(project) {
   const usedItems = project.sections.reduce((sum, section) => sum + section.items.filter(item => item.used).length, 0);
   const favorites = project.sections.reduce((sum, section) => sum + section.items.filter(item => item.favorite).length, 0);
 
-  qs("#stats").innerHTML = [
-    summaryRow("SEC", "Total de secciones", project.sections.length),
-    summaryRow("ITEMS", "Total de items", totalItems),
-    summaryRow("OK", "Items usados", usedItems),
-    summaryRow("*", "Favoritos", favorites),
-    summaryRow("@", "Ultima actualizacion", formatDate(project.updatedAt, false))
-  ].join("");
+  qs("#stats").innerHTML = `
+    <div class="proj-stats">
+      ${projStat(project.sections.length, "Secciones")}
+      ${projStat(totalItems, "Items")}
+      ${projStat(usedItems, "Usados")}
+      ${projStat(favorites, "Favoritos")}
+    </div>
+    <div class="proj-date">
+      <span>Ultima actualizacion</span>
+      <b>${formatDate(project.updatedAt, false)}</b>
+    </div>`;
   qs("#tagCloud").innerHTML = (project.tags || []).slice(0, 12).map((tag, index) => {
     const color = ["purple", "blue", "green"][index % 3];
     return `<span class="pill ${color}">${escapeHtml(tag)}</span>`;
@@ -700,7 +702,10 @@ function projectSidebarCard(project) {
   const count = countItems(project);
   const active = currentProject()?.id === project.id ? "active" : "";
   return `<a class="project-card ${active}" href="project.html?id=${encodeURIComponent(project.id)}">
-    <strong>${escapeHtml(project.metadata.PROJECT || "Untitled Project")}</strong>
+    <div class="project-card-header">
+      <strong>${escapeHtml(project.metadata.PROJECT || "Untitled Project")}</strong>
+      ${project.favorite ? `<span class="card-fav">★</span>` : ""}
+    </div>
     <small>${count} items - ${project.sections.length} secciones</small>
   </a>`;
 }
@@ -923,6 +928,10 @@ function fact(icon, text, tag = false) {
 
 function summaryRow(icon, label, value) {
   return `<div class="summary-row"><span>${escapeHtml(icon)} ${escapeHtml(label)}</span><b>${escapeHtml(value)}</b></div>`;
+}
+
+function projStat(value, label) {
+  return `<div class="proj-stat"><b>${escapeHtml(String(value))}</b><span>${escapeHtml(label)}</span></div>`;
 }
 
 function setText(selector, value) {
