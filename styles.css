@@ -110,11 +110,8 @@ p {
   gap: 22px;
   height: 100vh;
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   padding: 24px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.16) transparent;
 }
 
 .sidebar-inner::-webkit-scrollbar,
@@ -327,11 +324,15 @@ textarea::placeholder {
 }
 
 .sidebar-projects {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   min-height: 0;
 }
 
 .project-list {
-  max-height: 260px;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   padding-right: 3px;
   scrollbar-width: thin;
@@ -413,6 +414,11 @@ textarea::placeholder {
   gap: 2px;
   min-width: 0;
   flex: 1;
+}
+
+.sidebar-footer em {
+  font-style: normal;
+  color: var(--muted-2);
 }
 
 .workspace {

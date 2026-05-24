@@ -171,13 +171,9 @@ function renderProjectFavoriteButton(project) {
 function renderSidebar() {
   const favorites = state.projects.filter(project => project.favorite).length;
   const storageBytes = new Blob([localStorage.getItem(STORAGE_KEY) || "[]"]).size;
-  const storageLimit = 5 * 1024 * 1024;
-  const storagePercent = Math.min(100, Math.round((storageBytes / storageLimit) * 100));
-
   setText("#allProjectsCount", state.projects.length);
   setText("#favoritesCount", favorites);
-  setText("#storageText", `${formatBytes(storageBytes)} / 5 MB`);
-  if (qs("#storageBar")) qs("#storageBar").style.width = `${storagePercent}%`;
+  setText("#storageText", formatBytes(storageBytes));
 
   qsa(".menu-item").forEach(button => button.classList.remove("active"));
   if (state.filter === "favorites") qs("#favoritesFilter")?.classList.add("active");
