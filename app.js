@@ -76,7 +76,6 @@ function bindCommon() {
   });
   qs("#allProjectsFilter")?.addEventListener("click", () => setFilter("all"));
   qs("#favoritesFilter")?.addEventListener("click", () => setFilter("favorites"));
-  qs("#recentFilter")?.addEventListener("click", () => setFilter("recent"));
   qs("#themeToggle")?.addEventListener("click", toggleTheme);
   qs("#backupBtn")?.addEventListener("click", exportBackup);
   qs("#importBtn")?.addEventListener("click", () => qs("#importFile")?.click());
@@ -171,29 +170,18 @@ function renderProjectFavoriteButton(project) {
 
 function renderSidebar() {
   const favorites = state.projects.filter(project => project.favorite).length;
-  const recent = state.projects.filter(project => project.copyHistory?.length).length;
   const storageBytes = new Blob([localStorage.getItem(STORAGE_KEY) || "[]"]).size;
   const storageLimit = 5 * 1024 * 1024;
   const storagePercent = Math.min(100, Math.round((storageBytes / storageLimit) * 100));
 
   setText("#allProjectsCount", state.projects.length);
   setText("#favoritesCount", favorites);
-  setText("#recentCount", recent);
   setText("#storageText", `${formatBytes(storageBytes)} / 5 MB`);
   if (qs("#storageBar")) qs("#storageBar").style.width = `${storagePercent}%`;
 
   qsa(".menu-item").forEach(button => button.classList.remove("active"));
   if (state.filter === "favorites") qs("#favoritesFilter")?.classList.add("active");
-  else if (state.filter === "recent") qs("#recentFilter")?.classList.add("active");
   else qs("#allProjectsFilter")?.classList.add("active");
-
-  const categories = categoryEntries();
-  const categoryList = qs("#categoryList");
-  if (categoryList) {
-    categoryList.innerHTML = categories.slice(0, 7)
-      .map(([label, count]) => `<div class="category-row"><span>${escapeHtml(label)}</span><span>${count}</span></div>`)
-      .join("") || `<div class="category-row"><span>Sin categorias</span><span>0</span></div>`;
-  }
 
   const projectList = qs("#projectList");
   if (projectList) {
@@ -644,7 +632,6 @@ function visibleProjects() {
   return sortedProjects().filter(project => {
     if (!projectMatchesQuery(project)) return false;
     if (state.filter === "favorites") return project.favorite;
-    if (state.filter === "recent") return Boolean(project.copyHistory?.length);
     return true;
   });
 }
@@ -717,7 +704,6 @@ function projectSidebarCard(project) {
   return `<a class="project-card ${active}" href="project.html?id=${encodeURIComponent(project.id)}">
     <strong>${escapeHtml(project.metadata.PROJECT || "Untitled Project")}</strong>
     <small>${count} items - ${project.sections.length} secciones</small>
-    <small>${escapeHtml((project.tags || []).slice(0, 5).join(", "))}</small>
   </a>`;
 }
 

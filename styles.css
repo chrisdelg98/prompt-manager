@@ -88,11 +88,16 @@ p {
 .app-shell {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
+  align-items: start;
   min-height: 100vh;
 }
 
 .sidebar {
+  position: sticky;
+  top: 0;
   min-width: 0;
+  height: 100vh;
+  overflow: hidden;
   padding: 0;
   border-right: 1px solid var(--line);
   background: rgba(10, 17, 29, 0.74);
@@ -103,8 +108,44 @@ p {
   display: flex;
   flex-direction: column;
   gap: 22px;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.16) transparent;
+}
+
+.sidebar-inner::-webkit-scrollbar,
+.project-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-inner::-webkit-scrollbar-track,
+.project-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-inner::-webkit-scrollbar-thumb,
+.project-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.sidebar-inner:hover::-webkit-scrollbar-thumb,
+.project-list:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+}
+
+:root[data-theme="light"] .sidebar-inner,
+:root[data-theme="light"] .project-list {
+  scrollbar-color: rgba(72, 88, 116, 0.18) transparent;
+}
+
+:root[data-theme="light"] .sidebar-inner::-webkit-scrollbar-thumb,
+:root[data-theme="light"] .project-list::-webkit-scrollbar-thumb {
+  background: rgba(72, 88, 116, 0.16);
 }
 
 .brand,
@@ -290,23 +331,30 @@ textarea::placeholder {
 }
 
 .project-list {
-  max-height: 220px;
+  max-height: 260px;
   overflow: auto;
   padding-right: 3px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.16) transparent;
 }
 
 .project-card {
   display: grid;
-  gap: 5px;
+  gap: 7px;
   width: 100%;
-  padding: 10px;
-  background: transparent;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
   text-align: left;
 }
 
 .project-card.active {
   background: linear-gradient(135deg, rgba(52, 120, 255, 0.18), rgba(110, 82, 255, 0.08));
   border-color: rgba(52, 120, 255, 0.42);
+}
+
+.project-card strong {
+  line-height: 1.2;
 }
 
 .project-card small {
@@ -1134,8 +1182,16 @@ dialog::backdrop {
     grid-template-columns: 1fr;
   }
 
+  .sidebar {
+    position: static;
+    height: auto;
+    overflow: visible;
+  }
+
   .sidebar-inner {
+    height: auto;
     min-height: auto;
+    overflow: visible;
   }
 
   .project-list {
