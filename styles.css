@@ -397,11 +397,22 @@ textarea::placeholder {
 }
 
 .star-button {
+  display: grid;
+  place-items: center;
   width: 34px;
   height: 34px;
   background: transparent;
   color: var(--warn);
-  font-size: 24px;
+}
+
+.star-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .project-facts {
@@ -806,6 +817,11 @@ textarea {
   font-size: 13px;
 }
 
+.quick-row-actions .icon-button svg {
+  width: 14px;
+  height: 14px;
+}
+
 .badge {
   align-self: center;
   width: fit-content;
@@ -832,6 +848,14 @@ textarea {
   gap: 14px;
 }
 
+.section-focused .quick-view {
+  display: none;
+}
+
+.section-focused .section-workbench {
+  grid-row: 1;
+}
+
 .section-workbench .card-title-row {
   align-items: center;
 }
@@ -850,6 +874,11 @@ textarea {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(8, 13, 22, 0.35);
+}
+
+.section-focused .virtual-list {
+  height: calc(100vh - 340px);
+  min-height: 520px;
 }
 
 .overview-list {
@@ -885,9 +914,9 @@ textarea {
   left: 8px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  min-height: 142px;
-  padding: 14px;
+  gap: 10px;
+  min-height: 92px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -902,7 +931,7 @@ textarea {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .item-title strong {
@@ -910,7 +939,7 @@ textarea {
 }
 
 .item-content {
-  max-height: 68px;
+  max-height: 42px;
   overflow: hidden;
   white-space: pre-wrap;
   color: var(--muted);
@@ -923,20 +952,30 @@ textarea {
 
 .item-actions {
   display: grid;
-  grid-template-columns: repeat(3, 34px);
-  gap: 7px;
+  grid-template-columns: repeat(3, 30px);
+  gap: 6px;
   align-content: start;
 }
 
 .icon-button {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   background: var(--surface-2);
   border-color: var(--line);
   color: var(--text);
+}
+
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .icon-button.small {
@@ -947,7 +986,8 @@ textarea {
 
 .item-card.used,
 .quick-row.used {
-  border-color: rgba(33, 215, 137, 0.45);
+  border-color: rgba(15, 211, 126, 0.582);
+  border-width: 2px;
 }
 
 .used-pill,
@@ -961,7 +1001,7 @@ textarea {
 }
 
 .rating-dislike {
-  color: #b6c4d8;
+  color: #ff8383;
 }
 
 .quick-actions {
@@ -1133,7 +1173,7 @@ dialog::backdrop {
   }
 
   .item-actions {
-    grid-template-columns: repeat(6, 34px);
+    grid-template-columns: repeat(6, 30px);
   }
 }
 

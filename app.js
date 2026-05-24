@@ -1,6 +1,6 @@
 const STORAGE_KEY = "prompt-cms-projects-v1";
 const THEME_KEY = "prompt-cms-theme-v1";
-const ITEM_HEIGHT = 154;
+const ITEM_HEIGHT = 104;
 const OVERSCAN = 6;
 const OVERVIEW_INDEX = -1;
 
@@ -161,6 +161,14 @@ function renderHeader(title, meta, facts = "") {
   if (factsEl) factsEl.innerHTML = facts;
 }
 
+function renderProjectFavoriteButton(project) {
+  const button = qs("#projectFavoriteBtn");
+  if (!button) return;
+  button.innerHTML = icon("star");
+  button.classList.toggle("favorite-icon", Boolean(project.favorite));
+  button.title = project.favorite ? "Quitar favorito" : "Marcar favorito";
+}
+
 function renderSidebar() {
   const favorites = state.projects.filter(project => project.favorite).length;
   const recent = state.projects.filter(project => project.copyHistory?.length).length;
@@ -233,11 +241,12 @@ function renderProjectPage() {
     fact("SEC", `${project.sections.length} secciones`),
     fact("ITEMS", `${countItems(project)} items`)
   ].join(""));
-  setText("#projectFavoriteBtn", project.favorite ? "*" : "+");
+  renderProjectFavoriteButton(project);
 
   renderProjectSummary(project);
   renderSectionTabs(project);
   renderQuickList(project);
+  document.body.classList.toggle("section-focused", state.activeSection !== OVERVIEW_INDEX);
 
   if (state.activeSection === OVERVIEW_INDEX) renderOverviewWorkbench(project);
   else renderSectionWorkbench(project);
@@ -546,7 +555,7 @@ function handleItemAction(action, itemKey) {
 function copyActiveSection() {
   const section = activeSection();
   if (!section || state.activeSection === OVERVIEW_INDEX) return;
-  copyText(section.items.map(formatItem).join("\n"));
+  copyText(section.items.map(item => item.content).join("\n"));
   toast("Seccion copiada al portapapeles");
 }
 
@@ -744,6 +753,20 @@ function metricCard(label, value, help) {
   </article>`;
 }
 
+function icon(name) {
+  const paths = {
+    copy: '<rect x="9" y="9" width="10" height="10" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path>',
+    circle: '<circle cx="12" cy="12" r="7"></circle>',
+    "check-circle": '<path d="M8 12l2.5 2.5L16 9"></path><circle cx="12" cy="12" r="8"></circle>',
+    star: '<path d="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.9L12 3z"></path>',
+    "thumbs-up": '<path d="M7 10v10"></path><path d="M11 10l1-5a2 2 0 0 1 3 1v4h4a2 2 0 0 1 2 2l-1 6a2 2 0 0 1-2 2H7"></path><path d="M3 10h4v10H3z"></path>',
+    "thumbs-down": '<path d="M7 14V4"></path><path d="M11 14l1 5a2 2 0 0 0 3-1v-4h4a2 2 0 0 0 2-2l-1-6a2 2 0 0 0-2-2H7"></path><path d="M3 4h4v10H3z"></path>',
+    "chevron-down": '<path d="M6 9l6 6 6-6"></path>',
+    "chevron-up": '<path d="M18 15l-6-6-6 6"></path>'
+  };
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths[name] || paths.circle}</svg>`;
+}
+
 function quickRowTemplate(item, section, project = currentProject()) {
   const label = section.name === "TRACKS" ? "TRACK" : section.name;
   const name = project?.metadata?.PROJECT ? `<small>${escapeHtml(project.metadata.PROJECT)}</small>` : "";
@@ -752,12 +775,12 @@ function quickRowTemplate(item, section, project = currentProject()) {
     <strong>${escapeHtml(item.id || item.type || "prompt")}</strong>
     <div class="quick-row-content">${name}<p>${escapeHtml(item.content)}</p></div>
     <div class="quick-row-actions">
-      ${actionButton("copy", item, "CP", "Copiar")}
-      ${actionButton("used", item, item.used ? "OK" : "O", "Usado", item.used ? "used-icon" : "")}
-      ${actionButton("favorite", item, item.favorite ? "*" : "+", "Favorito", item.favorite ? "favorite-icon" : "")}
-      ${actionButton("like", item, "+", "Like", item.rating === "like" ? "rating-like" : "")}
-      ${actionButton("dislike", item, "-", "Dislike", item.rating === "dislike" ? "rating-dislike" : "")}
-      ${actionButton("expand", item, "...", "Mas opciones")}
+      ${actionButton("copy", item, "copy", "Copiar")}
+      ${actionButton("used", item, item.used ? "check-circle" : "circle", "Usado", item.used ? "used-icon" : "")}
+      ${actionButton("favorite", item, "star", "Favorito", item.favorite ? "favorite-icon" : "")}
+      ${actionButton("like", item, "thumbs-up", "Like", item.rating === "like" ? "rating-like" : "")}
+      ${actionButton("dislike", item, "thumbs-down", "Dislike", item.rating === "dislike" ? "rating-dislike" : "")}
+      ${actionButton("expand", item, "chevron-down", "Mas opciones")}
     </div>
   </article>`;
 }
@@ -774,18 +797,18 @@ function itemTemplate(item, index) {
       <div class="item-content">${escapeHtml(item.content)}</div>
     </div>
     <div class="item-actions">
-      ${actionButton("copy", item, "CP", "Copiar")}
-      ${actionButton("used", item, item.used ? "OK" : "O", "Marcar usado", item.used ? "used-icon" : "")}
-      ${actionButton("favorite", item, item.favorite ? "*" : "+", "Favorito", item.favorite ? "favorite-icon" : "")}
-      ${actionButton("like", item, "+", "Like", item.rating === "like" ? "rating-like" : "")}
-      ${actionButton("dislike", item, "-", "Dislike", item.rating === "dislike" ? "rating-dislike" : "")}
-      ${actionButton("expand", item, item.expanded ? "^" : "...", "Expandir")}
+      ${actionButton("copy", item, "copy", "Copiar")}
+      ${actionButton("used", item, item.used ? "check-circle" : "circle", "Marcar usado", item.used ? "used-icon" : "")}
+      ${actionButton("favorite", item, "star", "Favorito", item.favorite ? "favorite-icon" : "")}
+      ${actionButton("like", item, "thumbs-up", "Like", item.rating === "like" ? "rating-like" : "")}
+      ${actionButton("dislike", item, "thumbs-down", "Dislike", item.rating === "dislike" ? "rating-dislike" : "")}
+      ${actionButton("expand", item, item.expanded ? "chevron-up" : "chevron-down", "Expandir")}
     </div>
   </article>`;
 }
 
-function actionButton(action, item, icon, title, extraClass = "") {
-  return `<button class="icon-button ${extraClass}" title="${title}" data-action="${action}" data-item-key="${item.uid}">${icon}</button>`;
+function actionButton(action, item, iconName, title, extraClass = "") {
+  return `<button class="icon-button ${extraClass}" title="${title}" aria-label="${title}" data-action="${action}" data-item-key="${item.uid}">${icon(iconName)}</button>`;
 }
 
 function filteredItems(section) {
