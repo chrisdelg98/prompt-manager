@@ -7,16 +7,22 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body data-page="index">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="app-shell">
       <aside class="sidebar">
         <div class="sidebar-inner">
-          <a class="brand" href="index.html">
-            <div class="brand-mark">P</div>
-            <div>
-              <h1>Prompt Manager</h1>
-              <p>Gestiona tus prompts</p>
-            </div>
-          </a>
+          <div class="brand-row">
+            <a class="brand" href="index.html">
+              <div class="brand-mark">P</div>
+              <div>
+                <h1>Prompt Manager</h1>
+                <p>Gestiona tus prompts</p>
+              </div>
+            </a>
+            <button class="sidebar-close" id="sidebarClose" title="Cerrar menu">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+          </div>
 
           <a class="primary-button wide-button" href="new.html">
             <span class="button-icon">+</span>
@@ -63,6 +69,9 @@
 
       <main class="workspace">
         <header class="topbar">
+          <button class="menu-toggle" id="sidebarToggle" data-tooltip="Mostrar menu">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
+          </button>
           <div class="project-heading">
             <p class="breadcrumb" id="projectMeta">Biblioteca / Todos los proyectos</p>
             <div class="title-row">

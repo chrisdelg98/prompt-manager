@@ -90,11 +90,13 @@ p {
   grid-template-columns: 280px minmax(0, 1fr);
   align-items: start;
   min-height: 100vh;
+  transition: grid-template-columns 220ms ease;
 }
 
 .sidebar {
   position: sticky;
   top: 0;
+  width: 280px;
   min-width: 0;
   height: 100vh;
   overflow: hidden;
@@ -102,6 +104,83 @@ p {
   border-right: 1px solid var(--line);
   background: rgba(10, 17, 29, 0.74);
   backdrop-filter: blur(18px);
+  transition: width 220ms ease;
+}
+
+body:not(.sidebar-open) .app-shell {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+
+body:not(.sidebar-open) .sidebar {
+  width: 0;
+  border-right: none;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sidebar-close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.sidebar-close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.sidebar-close svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.menu-toggle {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.menu-toggle:hover {
+  border-color: var(--line-strong);
+  filter: brightness(1.05);
+}
+
+.menu-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .sidebar-inner {
@@ -1293,30 +1372,68 @@ dialog::backdrop {
 
 @media (max-width: 900px) {
   .app-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 
   .sidebar {
-    position: static;
-    height: auto;
-    overflow: visible;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 280px !important;
+    height: 100dvh;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.45);
+  }
+
+  body.sidebar-open .sidebar {
+    transform: translateX(0);
   }
 
   .sidebar-inner {
-    height: auto;
-    min-height: auto;
-    overflow: visible;
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
-  .project-list {
-    max-height: 180px;
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.52);
+    z-index: 199;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+  }
+
+  body.sidebar-open .sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .workspace {
     padding: 18px;
   }
 
-  .topbar,
+  .topbar {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .topbar .project-heading {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .composer-head,
   .library-head,
   .card-title-row,

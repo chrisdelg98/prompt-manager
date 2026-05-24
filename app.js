@@ -1,5 +1,6 @@
 const STORAGE_KEY = "prompt-manager-projects-v1";
 const THEME_KEY = "prompt-manager-theme-v1";
+const SIDEBAR_KEY = "prompt-manager-sidebar-v1";
 const ITEM_HEIGHT = 104;
 const OVERSCAN = 6;
 const OVERVIEW_INDEX = -1;
@@ -47,6 +48,7 @@ init();
 
 async function init() {
   document.documentElement.dataset.theme = localStorage.getItem(THEME_KEY) || "dark";
+  initSidebarState();
   await initFS();
   bindCommon();
   if (page === "index") initIndex();
@@ -54,7 +56,23 @@ async function init() {
   if (page === "project") initProject();
 }
 
+function initSidebarState() {
+  const saved = localStorage.getItem(SIDEBAR_KEY);
+  const isMobile = window.innerWidth <= 900;
+  const shouldOpen = isMobile ? saved === "1" : saved !== "0";
+  document.body.classList.toggle("sidebar-open", shouldOpen);
+}
+
+function toggleSidebar() {
+  document.body.classList.toggle("sidebar-open");
+  const isOpen = document.body.classList.contains("sidebar-open");
+  localStorage.setItem(SIDEBAR_KEY, isOpen ? "1" : "0");
+}
+
 function bindCommon() {
+  qs("#sidebarToggle")?.addEventListener("click", toggleSidebar);
+  qs("#sidebarClose")?.addEventListener("click", toggleSidebar);
+  qs("#sidebarBackdrop")?.addEventListener("click", toggleSidebar);
   qs("#globalSearch")?.addEventListener("input", event => {
     state.query = event.target.value.trim().toLowerCase();
     renderSidebar();
