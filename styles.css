@@ -705,10 +705,19 @@ textarea::placeholder {
   font-weight: 400;
 }
 
-.library-bottom {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
-  gap: 16px;
+.library-cats {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.library-cats-label {
+  padding-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .composer {
@@ -1008,9 +1017,6 @@ textarea {
   gap: 14px;
 }
 
-.section-focused .quick-view {
-  display: none;
-}
 
 .section-focused .section-workbench {
   grid-row: 1;
@@ -1274,10 +1280,6 @@ dialog::backdrop {
 
   .library-summary {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .library-bottom {
-    grid-template-columns: 1fr;
   }
 
   .quick-row {

@@ -94,10 +94,6 @@ function setFilter(filter) {
 
 function initIndex() {
   renderHeader("Biblioteca de proyectos", "Biblioteca / Todos los proyectos", libraryFacts().join(""));
-  qs("#libraryRecent")?.addEventListener("click", event => {
-    const button = event.target.closest("[data-action]");
-    if (button) handleItemAction(button.dataset.action, button.dataset.itemKey);
-  });
   renderLibrary();
 }
 
@@ -139,16 +135,7 @@ function initProject() {
   qs("#copySectionBtn")?.addEventListener("click", copyActiveSection);
   qs("#markSectionUsedBtn")?.addEventListener("click", markActiveSectionUsed);
   qs("#quickSearchBtn")?.addEventListener("click", () => qs("#globalSearch")?.focus());
-  qs("#viewAllBtn")?.addEventListener("click", () => {
-    if (state.activeSection === OVERVIEW_INDEX) state.activeSection = 0;
-    renderProjectPage();
-    qs("#itemList")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
   qs("#itemList")?.addEventListener("scroll", () => renderItems());
-  qs("#quickList")?.addEventListener("click", event => {
-    const button = event.target.closest("[data-action]");
-    if (button) handleItemAction(button.dataset.action, button.dataset.itemKey);
-  });
   qs("#dialogSave")?.addEventListener("click", saveDialogEdit);
   renderProjectPage();
 }
@@ -205,9 +192,6 @@ function renderLibrary() {
   ].join("");
 
   qs("#libraryGrid").innerHTML = projects.map(projectLibraryCard).join("") || emptyLibraryCard();
-  qs("#libraryRecent").innerHTML = allRecentItems().slice(0, 5)
-    .map(({ project, section, item }) => quickRowTemplate(item, section, project))
-    .join("") || `<div class="pill">Sin actividad reciente</div>`;
   qs("#libraryCategories").innerHTML = categories.slice(0, 12)
     .map(([label, count], index) => `<span class="pill ${["purple", "blue", "green"][index % 3]}">${escapeHtml(label)} ${count}</span>`)
     .join("") || `<span class="pill">Sin categorias</span>`;
@@ -229,7 +213,6 @@ function renderProjectPage() {
 
   renderProjectSummary(project);
   renderSectionTabs(project);
-  renderQuickList(project);
   document.body.classList.toggle("section-focused", state.activeSection !== OVERVIEW_INDEX);
 
   if (state.activeSection === OVERVIEW_INDEX) renderOverviewWorkbench(project);
@@ -274,11 +257,6 @@ function renderSectionTabs(project) {
       renderProjectPage();
     });
   });
-}
-
-function renderQuickList(project) {
-  const items = allProjectItems(project).slice(0, 5);
-  qs("#quickList").innerHTML = items.map(({ item, section }) => quickRowTemplate(item, section, project)).join("") || `<div class="pill">No hay items todavia</div>`;
 }
 
 function renderOverviewWorkbench(project) {
@@ -658,10 +636,6 @@ function autoTags(project) {
 
 function allProjectItems(project) {
   return project.sections.flatMap(section => section.items.map(item => ({ section, item }))).sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt));
-}
-
-function allRecentItems() {
-  return state.projects.flatMap(project => project.sections.flatMap(section => section.items.map(item => ({ project, section, item })))).sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt));
 }
 
 function findItem(itemKey) {
