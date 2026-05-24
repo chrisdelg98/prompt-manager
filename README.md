@@ -6,6 +6,10 @@ Aplicacion web estatica para pegar documentos de prompts, parsearlos por seccion
 
 Abre `index.html` en el navegador. No requiere servidor ni instalacion.
 
+- `index.html`: biblioteca y resumen general de todos los proyectos.
+- `new.html`: pantalla dedicada para crear o importar un proyecto.
+- `project.html?id=...`: vista de un proyecto, con `Overview` y tabs dinamicas por seccion.
+
 Los proyectos se guardan automaticamente en `localStorage`. Tambien puedes exportar un proyecto individual, importar `.json` o `.txt`, y crear un backup JSON de todos los proyectos.
 
 ## Formato

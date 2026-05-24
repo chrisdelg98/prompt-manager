@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Proyecto - Prompt Manager</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body data-page="project">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-inner">
+          <a class="brand" href="index.html">
+            <div class="brand-mark">P</div>
+            <div>
+              <h1>Prompt Manager</h1>
+              <p>Gestiona tus prompts</p>
+            </div>
+          </a>
+
+          <a class="primary-button wide-button" href="new.html">
+            <span class="button-icon">+</span>
+            Nuevo proyecto
+          </a>
+
+          <label class="search-box">
+            <span class="visually-hidden">Buscar</span>
+            <input id="globalSearch" type="search" placeholder="Buscar proyectos...">
+          </label>
+
+          <nav class="sidebar-menu" aria-label="Filtros">
+            <button class="menu-item active" type="button" id="allProjectsFilter"><span>[]</span> Todos los proyectos <b id="allProjectsCount">0</b></button>
+            <button class="menu-item" type="button" id="favoritesFilter"><span>*</span> Favoritos <b id="favoritesCount">0</b></button>
+            <button class="menu-item" type="button" id="recentFilter"><span>@</span> Usados recientemente <b id="recentCount">0</b></button>
+          </nav>
+
+          <div class="sidebar-block">
+            <div class="sidebar-block-title">Categorias <span>(auto)</span></div>
+            <div class="category-list" id="categoryList"></div>
+          </div>
+
+          <div class="sidebar-block sidebar-projects">
+            <div class="sidebar-block-title">Proyectos</div>
+            <div class="project-sort">
+              <select id="sortSelect">
+                <option value="updatedDesc">Recientes</option>
+                <option value="createdDesc">Creados</option>
+                <option value="nameAsc">Nombre A-Z</option>
+              </select>
+            </div>
+            <nav id="projectList" class="project-list" aria-label="Proyectos"></nav>
+          </div>
+
+          <div class="storage-card">
+            <div>Almacenamiento</div>
+            <strong id="storageText">0 KB / 5 MB</strong>
+            <div class="storage-track"><span id="storageBar"></span></div>
+          </div>
+
+          <div class="sidebar-footer">
+            <div class="avatar">CO</div>
+            <div>
+              <strong>Chris One</strong>
+              <span>Administrador</span>
+            </div>
+            <button class="icon-button small" id="themeToggle" title="Cambiar tema">T</button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div class="project-heading">
+            <p class="breadcrumb" id="projectMeta">Biblioteca / Proyecto</p>
+            <div class="title-row">
+              <h2 id="projectTitle">Proyecto</h2>
+              <button class="star-button" id="projectFavoriteBtn" title="Favorito">*</button>
+            </div>
+            <div class="project-facts" id="projectFacts"></div>
+          </div>
+          <div class="topbar-actions">
+            <button class="ghost-button" id="duplicateBtn">Duplicar</button>
+            <button class="ghost-button" id="exportBtn">Exportar</button>
+            <button class="ghost-button" id="moreBtn">Backup</button>
+            <button class="primary-button" id="editProjectBtn">Editar proyecto</button>
+            <button class="danger-button" id="deleteBtn">Eliminar</button>
+          </div>
+        </header>
+
+        <section class="project-panel">
+          <div class="tabs-bar">
+            <div class="tabs" id="sectionTabs" role="tablist"></div>
+            <button class="icon-button add-tab" id="addSectionBtn" title="Anadir seccion">+</button>
+          </div>
+
+          <div class="dashboard-grid">
+            <div class="left-column">
+              <section class="panel-card summary-card">
+                <h3>Resumen del proyecto</h3>
+                <div class="summary-list" id="stats"></div>
+              </section>
+
+              <section class="panel-card">
+                <h3>Etiquetas <span>(auto)</span></h3>
+                <div class="tag-cloud" id="tagCloud"></div>
+              </section>
+
+              <section class="panel-card notes-card">
+                <div class="card-title-row">
+                  <h3>Notas del proyecto</h3>
+                  <button class="icon-button small" id="editNotesBtn" title="Editar notas">E</button>
+                </div>
+                <p id="projectNotes">Anade notas o informacion adicional sobre este proyecto...</p>
+              </section>
+
+              <section class="panel-card mini-composer">
+                <div class="card-title-row">
+                  <h3>Entrada estructurada <span>(ejemplo de formato)</span></h3>
+                  <button class="ghost-button" id="copyExampleBtn">Copiar ejemplo</button>
+                </div>
+                <pre id="formatExample"></pre>
+              </section>
+            </div>
+
+            <div class="right-column">
+              <section class="panel-card quick-view">
+                <div class="card-title-row">
+                  <h3>Vista rapida <span>(ultimos items)</span></h3>
+                  <button class="ghost-button" id="viewAllBtn">Ver todo</button>
+                </div>
+                <div class="quick-list" id="quickList"></div>
+              </section>
+
+              <section class="panel-card section-workbench">
+                <div class="card-title-row">
+                  <div>
+                    <h3 id="activeSectionTitle">Overview</h3>
+                    <p id="sectionSummary"></p>
+                  </div>
+                  <div class="bulk-actions">
+                    <button class="ghost-button" id="copySectionBtn">Copiar seccion</button>
+                    <button class="ghost-button" id="markSectionUsedBtn">Marcar usada</button>
+                    <button class="ghost-button" id="addItemBtn">Anadir item</button>
+                    <button class="ghost-button" id="editSectionBtn">Editar seccion</button>
+                  </div>
+                </div>
+                <div class="virtual-list" id="itemList"></div>
+              </section>
+
+              <section class="panel-card quick-actions-card">
+                <h3>Acciones rapidas</h3>
+                <div class="quick-actions">
+                  <button class="quick-action" id="quickAddItemBtn"><span>+</span><strong>Anadir item</strong><small>A esta seccion</small></button>
+                  <button class="quick-action" id="quickAddSectionBtn"><span>[]</span><strong>Anadir seccion</strong><small>Nueva seccion</small></button>
+                  <button class="quick-action" id="quickImportBtn"><span>UP</span><strong>Importar</strong><small>Desde archivo</small></button>
+                  <button class="quick-action" id="quickSearchBtn"><span>?</span><strong>Buscar en proyecto</strong><small>Buscar en contenido</small></button>
+                  <button class="quick-action" id="quickDuplicateBtn"><span>CP</span><strong>Duplicar proyecto</strong><small>Crear una copia</small></button>
+                  <button class="quick-action danger-lite" id="quickDeleteBtn"><span>X</span><strong>Eliminar proyecto</strong><small>Mover a papelera</small></button>
+                </div>
+                <input type="file" id="importFile" accept=".json,.txt,text/plain,application/json" hidden>
+              </section>
+            </div>
+          </div>
+
+          <div class="icon-legend">
+            <span>Leyenda rapida de iconos</span>
+            <b>CP</b> Copiar al portapapeles
+            <b>OK</b> Usado / No usado
+            <b>*</b> Favorito
+            <b>+</b> Like / Me gusta
+            <b>-</b> Dislike / No me gusta
+            <b>...</b> Mas opciones
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="editDialog">
+      <form method="dialog" class="dialog-card">
+        <h3 id="dialogTitle">Editar</h3>
+        <label>
+          <span id="dialogLabel">Contenido</span>
+          <textarea id="dialogText" spellcheck="false"></textarea>
+        </label>
+        <div class="dialog-actions">
+          <button class="ghost-button" value="cancel">Cancelar</button>
+          <button class="primary-button" id="dialogSave" value="default">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

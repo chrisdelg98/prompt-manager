@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Prompt Manager</title>
+    <title>Nuevo proyecto - Prompt Manager</title>
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body data-page="index">
+  <body data-page="new">
     <div class="app-shell">
       <aside class="sidebar">
         <div class="sidebar-inner">
@@ -71,40 +71,38 @@
       <main class="workspace">
         <header class="topbar">
           <div class="project-heading">
-            <p class="breadcrumb" id="projectMeta">Biblioteca / Todos los proyectos</p>
+            <p class="breadcrumb" id="projectMeta">Biblioteca / Crear proyecto</p>
             <div class="title-row">
-              <h2 id="projectTitle">Biblioteca de proyectos</h2>
+              <h2 id="projectTitle">Nuevo proyecto</h2>
             </div>
             <div class="project-facts" id="projectFacts"></div>
           </div>
         </header>
 
-        <section class="library-panel" id="libraryPanel">
-          <div class="library-head">
+        <section class="composer create-panel">
+          <div class="composer-head">
             <div>
-              <h3>Biblioteca de proyectos</h3>
-              <p>Resumen general de todos los prompts, proyectos, secciones y categorias.</p>
+              <h3>Entrada estructurada <span>(nuevo proyecto)</span></h3>
+              <p>Pega un bloque completo. Cada linea con @ crea una seccion nueva.</p>
             </div>
-            <div class="library-tools">
-              <select id="librarySortSelect">
-                <option value="updatedDesc">Mas recientes</option>
-                <option value="createdDesc">Creados</option>
-                <option value="nameAsc">Nombre A-Z</option>
-              </select>
-              <a class="primary-button" href="new.html">Nuevo proyecto</a>
+            <div class="composer-actions">
+              <button class="ghost-button" id="exampleBtn">Cargar ejemplo</button>
+              <button class="primary-button" id="parseBtn">Parsear y guardar</button>
             </div>
           </div>
-          <div class="library-summary" id="librarySummary"></div>
-          <div class="library-grid" id="libraryGrid"></div>
-          <div class="library-bottom">
-            <section class="panel-card">
-              <h3>Actividad reciente</h3>
-              <div class="quick-list" id="libraryRecent"></div>
-            </section>
-            <section class="panel-card">
-              <h3>Categorias principales</h3>
-              <div class="tag-cloud" id="libraryCategories"></div>
-            </section>
+          <textarea id="sourceInput" spellcheck="false" placeholder="@PROJECT: Galaxies&#10;@GENRE: Space Trance&#10;&#10;@SUNO&#10;prompt..."></textarea>
+          <div class="empty-actions">
+            <button class="quick-action" id="importBtn">
+              <span>UP</span>
+              <strong>Importar</strong>
+              <small>Desde archivo</small>
+            </button>
+            <button class="quick-action" id="backupBtn">
+              <span>BK</span>
+              <strong>Backup</strong>
+              <small>Exportar todo</small>
+            </button>
+            <input type="file" id="importFile" accept=".json,.txt,text/plain,application/json" hidden>
           </div>
         </section>
       </main>

@@ -2,6 +2,7 @@ const STORAGE_KEY = "prompt-cms-projects-v1";
 const THEME_KEY = "prompt-cms-theme-v1";
 const ITEM_HEIGHT = 154;
 const OVERSCAN = 6;
+const OVERVIEW_INDEX = -1;
 
 const exampleText = `@PROJECT: Galaxies
 @GENRE: Space Trance
@@ -31,144 +32,309 @@ A high energy space trance concept pack with prompts for music, covers, and visu
 
 const state = {
   projects: loadProjects(),
-  currentProjectId: null,
-  activeSection: 0,
+  activeSection: OVERVIEW_INDEX,
   query: "",
   sort: "updatedDesc",
+  filter: "all",
   editing: null
 };
 
-const els = {
-  projectList: document.querySelector("#projectList"),
-  categoryList: document.querySelector("#categoryList"),
-  allProjectsCount: document.querySelector("#allProjectsCount"),
-  favoritesCount: document.querySelector("#favoritesCount"),
-  recentCount: document.querySelector("#recentCount"),
-  storageText: document.querySelector("#storageText"),
-  storageBar: document.querySelector("#storageBar"),
-  globalSearch: document.querySelector("#globalSearch"),
-  sortSelect: document.querySelector("#sortSelect"),
-  sourceInput: document.querySelector("#sourceInput"),
-  parseBtn: document.querySelector("#parseBtn"),
-  exampleBtn: document.querySelector("#exampleBtn"),
-  copyExampleBtn: document.querySelector("#copyExampleBtn"),
-  newProjectBtn: document.querySelector("#newProjectBtn"),
-  importBtn: document.querySelector("#importBtn"),
-  quickImportBtn: document.querySelector("#quickImportBtn"),
-  importFile: document.querySelector("#importFile"),
-  backupBtn: document.querySelector("#backupBtn"),
-  themeToggle: document.querySelector("#themeToggle"),
-  duplicateBtn: document.querySelector("#duplicateBtn"),
-  quickDuplicateBtn: document.querySelector("#quickDuplicateBtn"),
-  exportBtn: document.querySelector("#exportBtn"),
-  deleteBtn: document.querySelector("#deleteBtn"),
-  quickDeleteBtn: document.querySelector("#quickDeleteBtn"),
-  moreBtn: document.querySelector("#moreBtn"),
-  editProjectBtn: document.querySelector("#editProjectBtn"),
-  projectFavoriteBtn: document.querySelector("#projectFavoriteBtn"),
-  projectTitle: document.querySelector("#projectTitle"),
-  projectMeta: document.querySelector("#projectMeta"),
-  projectFacts: document.querySelector("#projectFacts"),
-  composer: document.querySelector("#composer"),
-  projectPanel: document.querySelector("#projectPanel"),
-  stats: document.querySelector("#stats"),
-  tagCloud: document.querySelector("#tagCloud"),
-  projectNotes: document.querySelector("#projectNotes"),
-  editNotesBtn: document.querySelector("#editNotesBtn"),
-  formatExample: document.querySelector("#formatExample"),
-  sectionTabs: document.querySelector("#sectionTabs"),
-  addSectionBtn: document.querySelector("#addSectionBtn"),
-  quickAddSectionBtn: document.querySelector("#quickAddSectionBtn"),
-  sectionSummary: document.querySelector("#sectionSummary"),
-  activeSectionTitle: document.querySelector("#activeSectionTitle"),
-  itemList: document.querySelector("#itemList"),
-  quickList: document.querySelector("#quickList"),
-  viewAllBtn: document.querySelector("#viewAllBtn"),
-  copySectionBtn: document.querySelector("#copySectionBtn"),
-  markSectionUsedBtn: document.querySelector("#markSectionUsedBtn"),
-  addItemBtn: document.querySelector("#addItemBtn"),
-  quickAddItemBtn: document.querySelector("#quickAddItemBtn"),
-  quickSearchBtn: document.querySelector("#quickSearchBtn"),
-  editSectionBtn: document.querySelector("#editSectionBtn"),
-  editDialog: document.querySelector("#editDialog"),
-  dialogTitle: document.querySelector("#dialogTitle"),
-  dialogLabel: document.querySelector("#dialogLabel"),
-  dialogText: document.querySelector("#dialogText"),
-  dialogSave: document.querySelector("#dialogSave"),
-  toast: document.querySelector("#toast")
-};
+const page = document.body.dataset.page || "index";
+const qs = selector => document.querySelector(selector);
+const qsa = selector => [...document.querySelectorAll(selector)];
 
 init();
 
 function init() {
   document.documentElement.dataset.theme = localStorage.getItem(THEME_KEY) || "dark";
-  els.formatExample.textContent = exampleText;
-  bindEvents();
-  if (state.projects.length) {
-    state.currentProjectId = sortedProjects()[0].id;
-  } else {
-    els.sourceInput.value = exampleText;
-  }
-  render();
+  bindCommon();
+  if (page === "index") initIndex();
+  if (page === "new") initNew();
+  if (page === "project") initProject();
 }
 
-function bindEvents() {
-  els.parseBtn.addEventListener("click", createProjectFromInput);
-  els.exampleBtn.addEventListener("click", loadExample);
-  els.copyExampleBtn.addEventListener("click", () => {
-    copyText(exampleText);
-    toast("Ejemplo copiado al portapapeles");
-  });
-  els.newProjectBtn.addEventListener("click", () => {
-    state.currentProjectId = null;
-    state.activeSection = 0;
-    els.sourceInput.value = "";
-    render();
-    els.sourceInput.focus();
-  });
-  els.globalSearch.addEventListener("input", event => {
+function bindCommon() {
+  qs("#globalSearch")?.addEventListener("input", event => {
     state.query = event.target.value.trim().toLowerCase();
-    renderProjectList();
-    renderProjectPanel();
+    renderSidebar();
+    if (page === "index") renderLibrary();
+    if (page === "project") renderProjectPage();
   });
-  els.sortSelect.addEventListener("change", event => {
+  qs("#sortSelect")?.addEventListener("change", event => {
     state.sort = event.target.value;
-    renderProjectList();
+    const librarySort = qs("#librarySortSelect");
+    if (librarySort) librarySort.value = state.sort;
+    renderSidebar();
+    if (page === "index") renderLibrary();
   });
-  els.itemList.addEventListener("scroll", () => renderItems());
-  els.quickList.addEventListener("click", event => {
+  qs("#librarySortSelect")?.addEventListener("change", event => {
+    state.sort = event.target.value;
+    const sort = qs("#sortSelect");
+    if (sort) sort.value = state.sort;
+    renderSidebar();
+    renderLibrary();
+  });
+  qs("#allProjectsFilter")?.addEventListener("click", () => setFilter("all"));
+  qs("#favoritesFilter")?.addEventListener("click", () => setFilter("favorites"));
+  qs("#recentFilter")?.addEventListener("click", () => setFilter("recent"));
+  qs("#themeToggle")?.addEventListener("click", toggleTheme);
+  qs("#backupBtn")?.addEventListener("click", exportBackup);
+  qs("#importBtn")?.addEventListener("click", () => qs("#importFile")?.click());
+  qs("#quickImportBtn")?.addEventListener("click", () => qs("#importFile")?.click());
+  qs("#importFile")?.addEventListener("change", importFile);
+  renderSidebar();
+}
+
+function setFilter(filter) {
+  state.filter = filter;
+  renderSidebar();
+  if (page === "index") renderLibrary();
+}
+
+function initIndex() {
+  renderHeader("Biblioteca de proyectos", "Biblioteca / Todos los proyectos", libraryFacts().join(""));
+  qs("#libraryRecent")?.addEventListener("click", event => {
     const button = event.target.closest("[data-action]");
     if (button) handleItemAction(button.dataset.action, button.dataset.itemKey);
   });
-  els.copySectionBtn.addEventListener("click", copyActiveSection);
-  els.markSectionUsedBtn.addEventListener("click", markActiveSectionUsed);
-  els.addItemBtn.addEventListener("click", () => openItemDialog());
-  els.quickAddItemBtn.addEventListener("click", () => openItemDialog());
-  els.editSectionBtn.addEventListener("click", openSectionDialog);
-  els.addSectionBtn.addEventListener("click", openSectionCreateDialog);
-  els.quickAddSectionBtn.addEventListener("click", openSectionCreateDialog);
-  els.duplicateBtn.addEventListener("click", duplicateCurrentProject);
-  els.quickDuplicateBtn.addEventListener("click", duplicateCurrentProject);
-  els.exportBtn.addEventListener("click", exportCurrentProject);
-  els.deleteBtn.addEventListener("click", deleteCurrentProject);
-  els.quickDeleteBtn.addEventListener("click", deleteCurrentProject);
-  els.importBtn.addEventListener("click", () => els.importFile.click());
-  els.quickImportBtn.addEventListener("click", () => els.importFile.click());
-  els.importFile.addEventListener("change", importFile);
-  els.backupBtn.addEventListener("click", exportBackup);
-  els.themeToggle.addEventListener("click", toggleTheme);
-  els.dialogSave.addEventListener("click", saveDialogEdit);
-  els.projectFavoriteBtn.addEventListener("click", toggleProjectFavorite);
-  els.editNotesBtn.addEventListener("click", openNotesDialog);
-  els.editProjectBtn.addEventListener("click", openProjectDialog);
-  els.moreBtn.addEventListener("click", exportBackup);
-  els.viewAllBtn.addEventListener("click", () => els.itemList.scrollIntoView({ behavior: "smooth", block: "center" }));
-  els.quickSearchBtn.addEventListener("click", () => els.globalSearch.focus());
+  renderLibrary();
 }
 
-function loadExample() {
-  els.sourceInput.value = exampleText;
-  toast("Ejemplo cargado");
+function initNew() {
+  renderHeader("Nuevo proyecto", "Biblioteca / Crear proyecto", fact("FORM", "Entrada estructurada a pantalla completa"));
+  qs("#sourceInput").value = "";
+  qs("#parseBtn")?.addEventListener("click", createProjectFromInput);
+  qs("#exampleBtn")?.addEventListener("click", () => {
+    qs("#sourceInput").value = exampleText;
+    toast("Ejemplo cargado");
+  });
+}
+
+function initProject() {
+  const project = currentProject();
+  if (!project) {
+    location.href = "index.html";
+    return;
+  }
+  qs("#formatExample").textContent = exampleText;
+  qs("#copyExampleBtn")?.addEventListener("click", () => {
+    copyText(exampleText);
+    toast("Ejemplo copiado al portapapeles");
+  });
+  qs("#projectFavoriteBtn")?.addEventListener("click", toggleProjectFavorite);
+  qs("#duplicateBtn")?.addEventListener("click", duplicateCurrentProject);
+  qs("#quickDuplicateBtn")?.addEventListener("click", duplicateCurrentProject);
+  qs("#exportBtn")?.addEventListener("click", exportCurrentProject);
+  qs("#moreBtn")?.addEventListener("click", exportBackup);
+  qs("#deleteBtn")?.addEventListener("click", deleteCurrentProject);
+  qs("#quickDeleteBtn")?.addEventListener("click", deleteCurrentProject);
+  qs("#editProjectBtn")?.addEventListener("click", openProjectDialog);
+  qs("#editNotesBtn")?.addEventListener("click", openNotesDialog);
+  qs("#addSectionBtn")?.addEventListener("click", openSectionCreateDialog);
+  qs("#quickAddSectionBtn")?.addEventListener("click", openSectionCreateDialog);
+  qs("#addItemBtn")?.addEventListener("click", openItemDialog);
+  qs("#quickAddItemBtn")?.addEventListener("click", openItemDialog);
+  qs("#editSectionBtn")?.addEventListener("click", openSectionDialog);
+  qs("#copySectionBtn")?.addEventListener("click", copyActiveSection);
+  qs("#markSectionUsedBtn")?.addEventListener("click", markActiveSectionUsed);
+  qs("#quickSearchBtn")?.addEventListener("click", () => qs("#globalSearch")?.focus());
+  qs("#viewAllBtn")?.addEventListener("click", () => {
+    if (state.activeSection === OVERVIEW_INDEX) state.activeSection = 0;
+    renderProjectPage();
+    qs("#itemList")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+  qs("#itemList")?.addEventListener("scroll", () => renderItems());
+  qs("#quickList")?.addEventListener("click", event => {
+    const button = event.target.closest("[data-action]");
+    if (button) handleItemAction(button.dataset.action, button.dataset.itemKey);
+  });
+  qs("#dialogSave")?.addEventListener("click", saveDialogEdit);
+  renderProjectPage();
+}
+
+function renderHeader(title, meta, facts = "") {
+  const titleEl = qs("#projectTitle");
+  const metaEl = qs("#projectMeta");
+  const factsEl = qs("#projectFacts");
+  if (titleEl) titleEl.textContent = title;
+  if (metaEl) metaEl.textContent = meta;
+  if (factsEl) factsEl.innerHTML = facts;
+}
+
+function renderSidebar() {
+  const favorites = state.projects.filter(project => project.favorite).length;
+  const recent = state.projects.filter(project => project.copyHistory?.length).length;
+  const storageBytes = new Blob([localStorage.getItem(STORAGE_KEY) || "[]"]).size;
+  const storageLimit = 5 * 1024 * 1024;
+  const storagePercent = Math.min(100, Math.round((storageBytes / storageLimit) * 100));
+
+  setText("#allProjectsCount", state.projects.length);
+  setText("#favoritesCount", favorites);
+  setText("#recentCount", recent);
+  setText("#storageText", `${formatBytes(storageBytes)} / 5 MB`);
+  if (qs("#storageBar")) qs("#storageBar").style.width = `${storagePercent}%`;
+
+  qsa(".menu-item").forEach(button => button.classList.remove("active"));
+  if (state.filter === "favorites") qs("#favoritesFilter")?.classList.add("active");
+  else if (state.filter === "recent") qs("#recentFilter")?.classList.add("active");
+  else qs("#allProjectsFilter")?.classList.add("active");
+
+  const categories = categoryEntries();
+  const categoryList = qs("#categoryList");
+  if (categoryList) {
+    categoryList.innerHTML = categories.slice(0, 7)
+      .map(([label, count]) => `<div class="category-row"><span>${escapeHtml(label)}</span><span>${count}</span></div>`)
+      .join("") || `<div class="category-row"><span>Sin categorias</span><span>0</span></div>`;
+  }
+
+  const projectList = qs("#projectList");
+  if (projectList) {
+    projectList.innerHTML = visibleProjects().map(projectSidebarCard).join("") || `<div class="pill">No hay resultados</div>`;
+  }
+}
+
+function renderLibrary() {
+  const projects = visibleProjects();
+  const totalItems = state.projects.reduce((sum, project) => sum + countItems(project), 0);
+  const totalSections = state.projects.reduce((sum, project) => sum + project.sections.length, 0);
+  const categories = categoryEntries();
+  const usedItems = state.projects.reduce((sum, project) => {
+    return sum + project.sections.reduce((sectionSum, section) => sectionSum + section.items.filter(item => item.used).length, 0);
+  }, 0);
+
+  qs("#librarySummary").innerHTML = [
+    metricCard("Proyectos", state.projects.length, "Documentos guardados"),
+    metricCard("Items", totalItems, "Prompts disponibles"),
+    metricCard("Secciones", totalSections, "Creadas automaticamente"),
+    metricCard("Usados", usedItems, "Marcados como utilizados"),
+    metricCard("Categorias", categories.length, "Generadas por metadata")
+  ].join("");
+
+  qs("#libraryGrid").innerHTML = projects.map(projectLibraryCard).join("") || emptyLibraryCard();
+  qs("#libraryRecent").innerHTML = allRecentItems().slice(0, 5)
+    .map(({ project, section, item }) => quickRowTemplate(item, section, project))
+    .join("") || `<div class="pill">Sin actividad reciente</div>`;
+  qs("#libraryCategories").innerHTML = categories.slice(0, 12)
+    .map(([label, count], index) => `<span class="pill ${["purple", "blue", "green"][index % 3]}">${escapeHtml(label)} ${count}</span>`)
+    .join("") || `<span class="pill">Sin categorias</span>`;
+}
+
+function renderProjectPage() {
+  const project = currentProject();
+  if (!project) return;
+  if (!project.sections.length) {
+    project.sections.push({ id: crypto.randomUUID(), name: "NUEVA_SECCION", raw: "", items: [] });
+  }
+  if (state.activeSection >= project.sections.length) state.activeSection = OVERVIEW_INDEX;
+
+  renderHeader(project.metadata.PROJECT || "Untitled Project", `Biblioteca / ${project.metadata.PROJECT || "Untitled Project"}`, [
+    fact("CREADO", formatDate(project.createdAt, false)),
+    fact("GENRE", project.metadata.GENRE || project.tags?.[0] || "Sin categoria", true),
+    fact("SEC", `${project.sections.length} secciones`),
+    fact("ITEMS", `${countItems(project)} items`)
+  ].join(""));
+  setText("#projectFavoriteBtn", project.favorite ? "*" : "+");
+
+  renderProjectSummary(project);
+  renderSectionTabs(project);
+  renderQuickList(project);
+
+  if (state.activeSection === OVERVIEW_INDEX) renderOverviewWorkbench(project);
+  else renderSectionWorkbench(project);
+}
+
+function renderProjectSummary(project) {
+  const totalItems = countItems(project);
+  const usedItems = project.sections.reduce((sum, section) => sum + section.items.filter(item => item.used).length, 0);
+  const favorites = project.sections.reduce((sum, section) => sum + section.items.filter(item => item.favorite).length, 0);
+
+  qs("#stats").innerHTML = [
+    summaryRow("SEC", "Total de secciones", project.sections.length),
+    summaryRow("ITEMS", "Total de items", totalItems),
+    summaryRow("OK", "Items usados", usedItems),
+    summaryRow("*", "Favoritos", favorites),
+    summaryRow("@", "Ultima actualizacion", formatDate(project.updatedAt, false))
+  ].join("");
+  qs("#tagCloud").innerHTML = (project.tags || []).slice(0, 12).map((tag, index) => {
+    const color = ["purple", "blue", "green"][index % 3];
+    return `<span class="pill ${color}">${escapeHtml(tag)}</span>`;
+  }).join("") || `<span class="pill">Sin etiquetas</span>`;
+  setText("#projectNotes", project.notes || "Anade notas o informacion adicional sobre este proyecto...");
+}
+
+function renderSectionTabs(project) {
+  const overview = `<button class="tab ${state.activeSection === OVERVIEW_INDEX ? "active" : ""}" data-section-index="${OVERVIEW_INDEX}" role="tab">Overview</button>`;
+  const tabs = project.sections.map((section, index) => {
+    return `<button class="tab ${index === state.activeSection ? "active" : ""}" data-section-index="${index}" role="tab">
+      ${escapeHtml(humanizeSection(section.name))} <span class="tab-count">${section.items.length}</span>
+    </button>`;
+  }).join("");
+  qs("#sectionTabs").innerHTML = overview + tabs;
+  qsa("[data-section-index]").forEach(tab => {
+    tab.addEventListener("click", () => {
+      state.activeSection = Number(tab.dataset.sectionIndex);
+      qs("#itemList").scrollTop = 0;
+      renderProjectPage();
+    });
+  });
+}
+
+function renderQuickList(project) {
+  const items = allProjectItems(project).slice(0, 5);
+  qs("#quickList").innerHTML = items.map(({ item, section }) => quickRowTemplate(item, section, project)).join("") || `<div class="pill">No hay items todavia</div>`;
+}
+
+function renderOverviewWorkbench(project) {
+  setText("#activeSectionTitle", "Overview");
+  setText("#sectionSummary", "Resumen general del proyecto y ultimos items de todas las secciones.");
+  setSectionActionsDisabled(true);
+  const rows = project.sections.map((section, index) => {
+    const used = section.items.filter(item => item.used).length;
+    const favorites = section.items.filter(item => item.favorite).length;
+    return `<article class="overview-section-card">
+      <div>
+        <strong>${escapeHtml(humanizeSection(section.name))}</strong>
+        <p>${section.items.length} items - ${used} usados - ${favorites} favoritos</p>
+      </div>
+      <button class="ghost-button" data-overview-section="${index}">Abrir</button>
+    </article>`;
+  }).join("");
+  qs("#itemList").innerHTML = `<div class="overview-list">${rows || `<div class="pill">No hay secciones todavia</div>`}</div>`;
+  qsa("[data-overview-section]").forEach(button => {
+    button.addEventListener("click", () => {
+      state.activeSection = Number(button.dataset.overviewSection);
+      renderProjectPage();
+    });
+  });
+}
+
+function renderSectionWorkbench(project) {
+  const section = activeSection();
+  const ratios = unique(section.items.map(item => item.ratio).filter(Boolean));
+  setText("#activeSectionTitle", humanizeSection(section.name));
+  setText("#sectionSummary", `${section.items.length} elementos${ratios.length ? ` - ${ratios.join(", ")}` : ""}`);
+  setSectionActionsDisabled(false);
+  renderItems();
+}
+
+function renderItems() {
+  if (state.activeSection === OVERVIEW_INDEX) return;
+  const section = activeSection();
+  if (!section) return;
+  const list = qs("#itemList");
+  const items = filteredItems(section);
+  const totalHeight = items.length * ITEM_HEIGHT;
+  const start = Math.max(0, Math.floor(list.scrollTop / ITEM_HEIGHT) - OVERSCAN);
+  const visibleCount = Math.ceil(list.clientHeight / ITEM_HEIGHT) + OVERSCAN * 2;
+  const end = Math.min(items.length, start + visibleCount);
+  const visible = items.slice(start, end);
+
+  list.innerHTML = `<div class="virtual-spacer" style="height:${totalHeight}px">
+    ${visible.map(({ item }, localIndex) => itemTemplate(item, start + localIndex)).join("")}
+  </div>`;
+  list.querySelectorAll("[data-action]").forEach(button => {
+    button.addEventListener("click", () => handleItemAction(button.dataset.action, button.dataset.itemKey));
+  });
 }
 
 function parsePromptDocument(source) {
@@ -183,7 +349,6 @@ function parsePromptDocument(source) {
     notes: "",
     copyHistory: []
   };
-
   let current = null;
   const lines = source.replace(/\r\n/g, "\n").split("\n");
 
@@ -197,26 +362,17 @@ function parsePromptDocument(source) {
         project.metadata[name] = inlineValue;
         current = null;
       } else {
-        current = {
-          id: crypto.randomUUID(),
-          name,
-          items: [],
-          raw: inlineValue || ""
-        };
+        current = { id: crypto.randomUUID(), name, items: [], raw: inlineValue || "" };
         project.sections.push(current);
         if (inlineValue) current.items.push(parseItemLine(inlineValue));
       }
       continue;
     }
-
     if (!current) continue;
     current.raw = [current.raw, line].filter(Boolean).join("\n");
     if (line.trim()) current.items.push(parseItemLine(line));
   }
-
-  if (!project.metadata.PROJECT) {
-    project.metadata.PROJECT = project.sections[0]?.name || "Untitled Project";
-  }
+  if (!project.metadata.PROJECT) project.metadata.PROJECT = project.sections[0]?.name || "Untitled Project";
   project.tags = autoTags(project);
   return project;
 }
@@ -235,7 +391,6 @@ function parseItemLine(line) {
     expanded: false,
     createdAt: new Date().toISOString()
   };
-
   if (trimmed.includes("::")) {
     const [left, ...contentParts] = trimmed.split("::");
     item.content = contentParts.join("::").trim();
@@ -244,236 +399,132 @@ function parseItemLine(line) {
     item.type = item.id.replace(/\d+$/g, "");
     item.ratio = (typePart || "").trim();
   }
-
   return item;
 }
 
 function createProjectFromInput() {
-  const source = els.sourceInput.value.trim();
+  const source = qs("#sourceInput").value.trim();
   if (!source) {
     toast("Pega un bloque primero");
     return;
   }
   const project = parsePromptDocument(source);
   state.projects.unshift(project);
-  state.currentProjectId = project.id;
-  state.activeSection = 0;
   persist();
-  render();
-  toast("Proyecto creado");
+  location.href = `project.html?id=${encodeURIComponent(project.id)}`;
 }
 
-function render() {
-  renderSidebarStats();
-  renderProjectList();
-  renderCurrentProject();
-}
-
-function renderSidebarStats() {
-  const totalItems = state.projects.reduce((sum, project) => sum + countItems(project), 0);
-  const favorites = state.projects.filter(project => project.favorite).length;
-  const recent = state.projects.filter(project => project.copyHistory?.length).length;
-  const storageBytes = new Blob([localStorage.getItem(STORAGE_KEY) || "[]"]).size;
-  const storageLimit = 5 * 1024 * 1024;
-  const storagePercent = Math.min(100, Math.round((storageBytes / storageLimit) * 100));
-
-  els.allProjectsCount.textContent = state.projects.length;
-  els.favoritesCount.textContent = favorites;
-  els.recentCount.textContent = recent;
-  els.storageText.textContent = `${formatBytes(storageBytes)} / 5 MB`;
-  els.storageBar.style.width = `${storagePercent}%`;
-
-  const categories = new Map();
-  state.projects.forEach(project => {
-    const label = project.metadata.GENRE || project.tags?.[0] || "Sin categoria";
-    categories.set(label, (categories.get(label) || 0) + 1);
-  });
-
-  els.categoryList.innerHTML = [...categories.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 7)
-    .map(([label, count]) => `<div class="category-row"><span>${escapeHtml(label)}</span><span>${count}</span></div>`)
-    .join("") || `<div class="category-row"><span>Sin categorias</span><span>0</span></div>`;
-}
-
-function renderProjectList() {
-  const projects = sortedProjects().filter(projectMatchesQuery);
-  els.projectList.innerHTML = projects.map(project => {
-    const count = countItems(project);
-    return `<button class="project-card ${project.id === state.currentProjectId ? "active" : ""}" data-project-id="${project.id}">
-      <strong>${escapeHtml(project.metadata.PROJECT || "Untitled Project")}</strong>
-      <small>${count} items · ${project.sections.length} secciones</small>
-      <small>${escapeHtml((project.tags || []).slice(0, 5).join(", "))}</small>
-    </button>`;
-  }).join("") || `<div class="pill">No hay resultados</div>`;
-
-  els.projectList.querySelectorAll("[data-project-id]").forEach(button => {
-    button.addEventListener("click", () => {
-      state.currentProjectId = button.dataset.projectId;
-      state.activeSection = 0;
-      render();
+async function importFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  let projectId = null;
+  try {
+    const data = JSON.parse(text);
+    const imported = normalizeProjects(Array.isArray(data.projects) ? data.projects : [data]);
+    imported.forEach(project => {
+      project.id = project.id || crypto.randomUUID();
+      project.updatedAt = new Date().toISOString();
+      state.projects.unshift(project);
+      projectId = projectId || project.id;
     });
-  });
-}
-
-function renderCurrentProject() {
-  const project = currentProject();
-  const hasProject = Boolean(project);
-  els.composer.hidden = hasProject;
-  els.projectPanel.hidden = !hasProject;
-  [
-    els.duplicateBtn,
-    els.quickDuplicateBtn,
-    els.exportBtn,
-    els.deleteBtn,
-    els.quickDeleteBtn,
-    els.moreBtn,
-    els.editProjectBtn
-  ].forEach(button => button.disabled = !hasProject);
-  els.projectFavoriteBtn.hidden = !hasProject;
-
-  if (!project) {
-    els.projectTitle.textContent = "Crea o importa un documento";
-    els.projectMeta.textContent = "Biblioteca / Sin proyecto";
-    els.projectFacts.innerHTML = "";
-    return;
+  } catch {
+    const project = parsePromptDocument(text);
+    state.projects.unshift(project);
+    projectId = project.id;
   }
-
-  els.projectTitle.textContent = project.metadata.PROJECT || "Untitled Project";
-  els.projectMeta.textContent = `Biblioteca / ${project.metadata.PROJECT || "Untitled Project"}`;
-  els.projectFavoriteBtn.textContent = project.favorite ? "★" : "☆";
-  els.projectFacts.innerHTML = [
-    fact("▣", `Creado: ${formatDate(project.createdAt, false)}`),
-    fact("◇", project.metadata.GENRE || project.tags?.[0] || "Sin categoria", true),
-    fact("□", `${project.sections.length} secciones`),
-    fact("☷", `${countItems(project)} items`)
-  ].join("");
-  renderProjectPanel();
+  event.target.value = "";
+  persist();
+  location.href = projectId ? `project.html?id=${encodeURIComponent(projectId)}` : "index.html";
 }
 
-function renderProjectPanel() {
+function openItemDialog() {
+  if (state.activeSection === OVERVIEW_INDEX) state.activeSection = 0;
+  state.editing = { type: "item" };
+  setText("#dialogTitle", "Anadir item");
+  setText("#dialogLabel", "Linea o bloque");
+  qs("#dialogText").value = "";
+  qs("#editDialog").showModal();
+}
+
+function openSectionDialog() {
+  const section = activeSection();
+  if (!section || state.activeSection === OVERVIEW_INDEX) return;
+  state.editing = { type: "section" };
+  setText("#dialogTitle", `Editar @${section.name}`);
+  setText("#dialogLabel", "Contenido de la seccion");
+  qs("#dialogText").value = section.items.map(formatItem).join("\n");
+  qs("#editDialog").showModal();
+}
+
+function openSectionCreateDialog() {
+  state.editing = { type: "new-section" };
+  setText("#dialogTitle", "Anadir seccion");
+  setText("#dialogLabel", "Nombre y contenido. Ej: @THUMBNAILS");
+  qs("#dialogText").value = "@NUEVA_SECCION\n";
+  qs("#editDialog").showModal();
+}
+
+function openNotesDialog() {
   const project = currentProject();
-  if (!project) return;
-  if (state.activeSection >= project.sections.length) state.activeSection = 0;
-  if (!project.sections.length) {
-    project.sections.push({ id: crypto.randomUUID(), name: "NUEVA_SECCION", raw: "", items: [] });
+  state.editing = { type: "notes" };
+  setText("#dialogTitle", "Notas del proyecto");
+  setText("#dialogLabel", "Notas");
+  qs("#dialogText").value = project.notes || "";
+  qs("#editDialog").showModal();
+}
+
+function openProjectDialog() {
+  const project = currentProject();
+  state.editing = { type: "project" };
+  setText("#dialogTitle", "Editar proyecto");
+  setText("#dialogLabel", "Nombre del proyecto");
+  qs("#dialogText").value = project.metadata.PROJECT || "";
+  qs("#editDialog").showModal();
+}
+
+function saveDialogEdit(event) {
+  event.preventDefault();
+  const project = currentProject();
+  const section = activeSection();
+  const text = qs("#dialogText").value.trim();
+  if (!project || !state.editing) return;
+
+  if (state.editing.type === "item" && section && text) text.split("\n").filter(Boolean).forEach(line => section.items.push(parseItemLine(line)));
+  if (state.editing.type === "section" && section) {
+    section.items = text.split("\n").filter(Boolean).map(parseItemLine);
+    section.raw = text;
   }
+  if (state.editing.type === "new-section" && text) {
+    const parsed = parseSectionBlock(text);
+    project.sections.push(parsed);
+    state.activeSection = project.sections.length - 1;
+  }
+  if (state.editing.type === "notes") project.notes = text;
+  if (state.editing.type === "project" && text) project.metadata.PROJECT = text;
 
-  const totalItems = countItems(project);
-  const usedItems = project.sections.reduce((sum, section) => sum + section.items.filter(item => item.used).length, 0);
-  const favorites = project.sections.reduce((sum, section) => sum + section.items.filter(item => item.favorite).length, 0);
-
-  els.stats.innerHTML = [
-    summaryRow("□", "Total de secciones", project.sections.length),
-    summaryRow("▤", "Total de items", totalItems),
-    summaryRow("✓", "Items usados", usedItems),
-    summaryRow("☆", "Favoritos", favorites),
-    summaryRow("◴", "Ultima actualizacion", formatDate(project.updatedAt, false))
-  ].join("");
-
-  els.tagCloud.innerHTML = (project.tags || []).slice(0, 12).map((tag, index) => {
-    const color = ["purple", "blue", "green"][index % 3];
-    return `<span class="pill ${color}">${escapeHtml(tag)}</span>`;
-  }).join("") || `<span class="pill">Sin etiquetas</span>`;
-
-  els.projectNotes.textContent = project.notes || "Anade notas o informacion adicional sobre este proyecto...";
-
-  els.sectionTabs.innerHTML = project.sections.map((section, index) => {
-    const sectionLabel = humanizeSection(section.name);
-    return `<button class="tab ${index === state.activeSection ? "active" : ""}" data-section-index="${index}" role="tab">
-      ${escapeHtml(sectionLabel)} <span class="tab-count">${section.items.length}</span>
-    </button>`;
-  }).join("");
-
-  els.sectionTabs.querySelectorAll("[data-section-index]").forEach(tab => {
-    tab.addEventListener("click", () => {
-      state.activeSection = Number(tab.dataset.sectionIndex);
-      els.itemList.scrollTop = 0;
-      renderProjectPanel();
-    });
-  });
-
-  const section = activeSection();
-  const ratios = unique(section.items.map(item => item.ratio).filter(Boolean));
-  els.activeSectionTitle.textContent = humanizeSection(section.name);
-  els.sectionSummary.textContent = `${section.items.length} elementos${ratios.length ? ` · ${ratios.join(", ")}` : ""}`;
-  renderQuickList(project);
-  renderItems();
+  project.updatedAt = new Date().toISOString();
+  project.tags = autoTags(project);
+  persist();
+  qs("#editDialog").close();
+  renderSidebar();
+  renderProjectPage();
+  toast("Guardado");
 }
 
-function renderQuickList(project) {
-  const items = allProjectItems(project).slice(0, 5);
-  els.quickList.innerHTML = items.map(({ item, section }) => quickRowTemplate(item, section)).join("") || `<div class="pill">No hay items todavia</div>`;
-}
-
-function renderItems() {
-  const section = activeSection();
-  if (!section) return;
-  const items = filteredItems(section);
-  const totalHeight = items.length * ITEM_HEIGHT;
-  const start = Math.max(0, Math.floor(els.itemList.scrollTop / ITEM_HEIGHT) - OVERSCAN);
-  const visibleCount = Math.ceil(els.itemList.clientHeight / ITEM_HEIGHT) + OVERSCAN * 2;
-  const end = Math.min(items.length, start + visibleCount);
-  const visible = items.slice(start, end);
-
-  els.itemList.innerHTML = `<div class="virtual-spacer" style="height:${totalHeight}px">
-    ${visible.map(({ item }, localIndex) => itemTemplate(item, start + localIndex)).join("")}
-  </div>`;
-
-  els.itemList.querySelectorAll("[data-action]").forEach(button => {
-    button.addEventListener("click", () => handleItemAction(button.dataset.action, button.dataset.itemKey));
-  });
-}
-
-function quickRowTemplate(item, section) {
-  const label = section.name === "TRACKS" ? "TRACK" : section.name;
-  return `<article class="quick-row ${item.used ? "used" : ""}">
-    <span class="badge ${label === "TRACK" ? "green" : ""}">${escapeHtml(label)}</span>
-    <strong>${escapeHtml(item.id || item.type || "prompt")}</strong>
-    <div class="quick-row-content"><p>${escapeHtml(item.content)}</p></div>
-    <div class="quick-row-actions">
-      ${actionButton("copy", item, "⧉", "Copiar")}
-      ${actionButton("used", item, item.used ? "✓" : "○", "Usado", item.used ? "used-icon" : "")}
-      ${actionButton("favorite", item, item.favorite ? "★" : "☆", "Favorito", item.favorite ? "favorite-icon" : "")}
-      ${actionButton("like", item, "♡", "Like", item.rating === "like" ? "rating-like" : "")}
-      ${actionButton("dislike", item, "♢", "Dislike", item.rating === "dislike" ? "rating-dislike" : "")}
-      ${actionButton("expand", item, "⌄", "Mas opciones")}
-    </div>
-  </article>`;
-}
-
-function itemTemplate(item, index) {
-  const labels = [item.id, item.type, item.ratio].filter(Boolean);
-  return `<article class="item-card ${item.used ? "used" : ""} ${item.expanded ? "expanded" : ""}" style="top:${index * ITEM_HEIGHT + 8}px">
-    <div class="item-main">
-      <div class="item-title">
-        <strong>${escapeHtml(item.id || "Item")}</strong>
-        ${labels.map(label => pill(escapeHtml(label))).join("")}
-        ${item.used ? `<span class="pill used-pill">usado</span>` : ""}
-      </div>
-      <div class="item-content">${escapeHtml(item.content)}</div>
-    </div>
-    <div class="item-actions">
-      ${actionButton("copy", item, "⧉", "Copiar")}
-      ${actionButton("used", item, item.used ? "✓" : "○", "Marcar usado", item.used ? "used-icon" : "")}
-      ${actionButton("favorite", item, item.favorite ? "★" : "☆", "Favorito", item.favorite ? "favorite-icon" : "")}
-      ${actionButton("like", item, "♡", "Like", item.rating === "like" ? "rating-like" : "")}
-      ${actionButton("dislike", item, "♢", "Dislike", item.rating === "dislike" ? "rating-dislike" : "")}
-      ${actionButton("expand", item, item.expanded ? "⌃" : "⌄", "Expandir")}
-    </div>
-  </article>`;
-}
-
-function actionButton(action, item, icon, title, extraClass = "") {
-  return `<button class="icon-button ${extraClass}" title="${title}" data-action="${action}" data-item-key="${item.uid}">${icon}</button>`;
+function parseSectionBlock(text) {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const first = lines[0].match(/^@?([A-Za-z0-9_-]+)\s*(?::)?\s*(.*)$/);
+  const name = first?.[1] || "NUEVA_SECCION";
+  const inline = first?.[2] || "";
+  const contentLines = [inline, ...lines.slice(1)].filter(Boolean);
+  return { id: crypto.randomUUID(), name, raw: contentLines.join("\n"), items: contentLines.map(parseItemLine) };
 }
 
 function handleItemAction(action, itemKey) {
-  const project = currentProject();
   const found = findItem(itemKey);
-  if (!project || !found) return;
-  const { section, item } = found;
-
+  if (!found) return;
+  const { project, section, item } = found;
   if (action === "copy") {
     copyText(item.content);
     project.copyHistory.unshift({ itemId: item.id, section: section.name, copiedAt: new Date().toISOString() });
@@ -485,24 +536,16 @@ function handleItemAction(action, itemKey) {
   if (action === "dislike") item.rating = item.rating === "dislike" ? null : "dislike";
   if (action === "favorite") item.favorite = !item.favorite;
   if (action === "expand") item.expanded = !item.expanded;
-
   project.updatedAt = new Date().toISOString();
   persist();
-  render();
-}
-
-function filteredItems(section) {
-  return section.items
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => {
-      if (!state.query) return true;
-      return searchableText({ ...item, section: section.name }).includes(state.query);
-    });
+  renderSidebar();
+  if (page === "project") renderProjectPage();
+  if (page === "index") renderLibrary();
 }
 
 function copyActiveSection() {
   const section = activeSection();
-  if (!section) return;
+  if (!section || state.activeSection === OVERVIEW_INDEX) return;
   copyText(section.items.map(formatItem).join("\n"));
   toast("Seccion copiada al portapapeles");
 }
@@ -510,110 +553,12 @@ function copyActiveSection() {
 function markActiveSectionUsed() {
   const project = currentProject();
   const section = activeSection();
-  if (!section) return;
+  if (!section || state.activeSection === OVERVIEW_INDEX) return;
   section.items.forEach(item => item.used = true);
   project.updatedAt = new Date().toISOString();
   persist();
-  renderProjectPanel();
+  renderProjectPage();
   toast("Seccion marcada");
-}
-
-function openItemDialog() {
-  state.editing = { type: "item" };
-  els.dialogTitle.textContent = "Anadir item";
-  els.dialogLabel.textContent = "Linea o bloque";
-  els.dialogText.value = "";
-  els.editDialog.showModal();
-}
-
-function openSectionDialog() {
-  const section = activeSection();
-  if (!section) return;
-  state.editing = { type: "section" };
-  els.dialogTitle.textContent = `Editar @${section.name}`;
-  els.dialogLabel.textContent = "Contenido de la seccion";
-  els.dialogText.value = section.items.map(formatItem).join("\n");
-  els.editDialog.showModal();
-}
-
-function openSectionCreateDialog() {
-  state.editing = { type: "new-section" };
-  els.dialogTitle.textContent = "Anadir seccion";
-  els.dialogLabel.textContent = "Nombre y contenido. Ej: @THUMBNAILS";
-  els.dialogText.value = "@NUEVA_SECCION\n";
-  els.editDialog.showModal();
-}
-
-function openNotesDialog() {
-  const project = currentProject();
-  if (!project) return;
-  state.editing = { type: "notes" };
-  els.dialogTitle.textContent = "Notas del proyecto";
-  els.dialogLabel.textContent = "Notas";
-  els.dialogText.value = project.notes || "";
-  els.editDialog.showModal();
-}
-
-function openProjectDialog() {
-  const project = currentProject();
-  if (!project) return;
-  state.editing = { type: "project" };
-  els.dialogTitle.textContent = "Editar proyecto";
-  els.dialogLabel.textContent = "Nombre del proyecto";
-  els.dialogText.value = project.metadata.PROJECT || "";
-  els.editDialog.showModal();
-}
-
-function saveDialogEdit(event) {
-  event.preventDefault();
-  const project = currentProject();
-  const section = activeSection();
-  const text = els.dialogText.value.trim();
-  if (!project || !state.editing) return;
-
-  if (state.editing.type === "item" && section && text) {
-    text.split("\n").filter(Boolean).forEach(line => section.items.push(parseItemLine(line)));
-    toast("Item agregado");
-  }
-  if (state.editing.type === "section" && section) {
-    section.items = text.split("\n").filter(Boolean).map(parseItemLine);
-    section.raw = text;
-    toast("Seccion actualizada");
-  }
-  if (state.editing.type === "new-section" && text) {
-    const parsed = parseSectionBlock(text);
-    project.sections.push(parsed);
-    state.activeSection = project.sections.length - 1;
-    toast("Seccion agregada");
-  }
-  if (state.editing.type === "notes") {
-    project.notes = text;
-    toast("Notas guardadas");
-  }
-  if (state.editing.type === "project" && text) {
-    project.metadata.PROJECT = text;
-    toast("Proyecto actualizado");
-  }
-
-  project.updatedAt = new Date().toISOString();
-  project.tags = autoTags(project);
-  persist();
-  els.editDialog.close();
-  render();
-}
-
-function parseSectionBlock(text) {
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
-  const first = lines[0].match(/^@?([A-Za-z0-9_-]+)\s*(?::)?\s*(.*)$/);
-  const name = first?.[1] || "NUEVA_SECCION";
-  const inline = first?.[2] || "";
-  const contentLines = [inline, ...lines.slice(1)].filter(Boolean);
-  return {
-    id: crypto.randomUUID(),
-    name,
-    raw: contentLines.join("\n"),
-    items: contentLines.map(parseItemLine)
-  };
 }
 
 function duplicateCurrentProject() {
@@ -629,20 +574,17 @@ function duplicateCurrentProject() {
     section.items.forEach(item => item.uid = crypto.randomUUID());
   });
   state.projects.unshift(clone);
-  state.currentProjectId = clone.id;
   persist();
-  render();
-  toast("Proyecto duplicado");
+  location.href = `project.html?id=${encodeURIComponent(clone.id)}`;
 }
 
 function exportCurrentProject() {
   const project = currentProject();
-  if (!project) return;
-  downloadJson(`${slug(project.metadata.PROJECT)}.json`, project);
+  if (project) downloadJson(`${slug(project.metadata.PROJECT)}.json`, project);
 }
 
 function exportBackup() {
-  downloadJson(`prompt-cms-backup-${new Date().toISOString().slice(0, 10)}.json`, {
+  downloadJson(`prompt-manager-backup-${new Date().toISOString().slice(0, 10)}.json`, {
     exportedAt: new Date().toISOString(),
     projects: state.projects
   });
@@ -650,39 +592,10 @@ function exportBackup() {
 
 function deleteCurrentProject() {
   const project = currentProject();
-  if (!project) return;
-  const ok = confirm(`Eliminar "${project.metadata.PROJECT}"?`);
-  if (!ok) return;
+  if (!project || !confirm(`Eliminar "${project.metadata.PROJECT}"?`)) return;
   state.projects = state.projects.filter(candidate => candidate.id !== project.id);
-  state.currentProjectId = state.projects[0]?.id || null;
-  state.activeSection = 0;
   persist();
-  render();
-  toast("Proyecto eliminado");
-}
-
-async function importFile(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const text = await file.text();
-  try {
-    const data = JSON.parse(text);
-    const imported = normalizeProjects(Array.isArray(data.projects) ? data.projects : [data]);
-    imported.forEach(project => {
-      project.id = project.id || crypto.randomUUID();
-      project.updatedAt = new Date().toISOString();
-      state.projects.unshift(project);
-    });
-    state.currentProjectId = state.projects[0]?.id || null;
-  } catch {
-    const project = parsePromptDocument(text);
-    state.projects.unshift(project);
-    state.currentProjectId = project.id;
-  }
-  event.target.value = "";
-  persist();
-  render();
-  toast("Importado");
+  location.href = "index.html";
 }
 
 function toggleTheme() {
@@ -697,11 +610,13 @@ function toggleProjectFavorite() {
   project.favorite = !project.favorite;
   project.updatedAt = new Date().toISOString();
   persist();
-  render();
+  renderSidebar();
+  renderProjectPage();
 }
 
 function currentProject() {
-  return state.projects.find(project => project.id === state.currentProjectId);
+  const id = new URLSearchParams(location.search).get("id");
+  return state.projects.find(project => project.id === id);
 }
 
 function activeSection() {
@@ -713,6 +628,15 @@ function sortedProjects() {
     if (state.sort === "nameAsc") return (a.metadata.PROJECT || "").localeCompare(b.metadata.PROJECT || "");
     if (state.sort === "createdDesc") return new Date(b.createdAt) - new Date(a.createdAt);
     return new Date(b.updatedAt) - new Date(a.updatedAt);
+  });
+}
+
+function visibleProjects() {
+  return sortedProjects().filter(project => {
+    if (!projectMatchesQuery(project)) return false;
+    if (state.filter === "favorites") return project.favorite;
+    if (state.filter === "recent") return Boolean(project.copyHistory?.length);
+    return true;
   });
 }
 
@@ -737,23 +661,145 @@ function autoTags(project) {
 }
 
 function allProjectItems(project) {
-  return project.sections
-    .flatMap(section => section.items.map(item => ({ section, item })))
-    .sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt));
+  return project.sections.flatMap(section => section.items.map(item => ({ section, item }))).sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt));
+}
+
+function allRecentItems() {
+  return state.projects.flatMap(project => project.sections.flatMap(section => section.items.map(item => ({ project, section, item })))).sort((a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt));
 }
 
 function findItem(itemKey) {
-  const project = currentProject();
-  if (!project) return null;
-  for (const section of project.sections) {
-    const item = section.items.find(candidate => candidate.uid === itemKey);
-    if (item) return { section, item };
+  for (const project of state.projects) {
+    for (const section of project.sections) {
+      const item = section.items.find(candidate => candidate.uid === itemKey);
+      if (item) return { project, section, item };
+    }
   }
   return null;
 }
 
 function countItems(project) {
   return project.sections.reduce((sum, section) => sum + section.items.length, 0);
+}
+
+function categoryEntries() {
+  const categories = new Map();
+  state.projects.forEach(project => {
+    const label = project.metadata.GENRE || project.tags?.[0] || "Sin categoria";
+    categories.set(label, (categories.get(label) || 0) + 1);
+  });
+  return [...categories.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function libraryFacts() {
+  const totalItems = state.projects.reduce((sum, project) => sum + countItems(project), 0);
+  const totalSections = state.projects.reduce((sum, project) => sum + project.sections.length, 0);
+  return [
+    fact("PROJECTS", `${state.projects.length} proyectos`),
+    fact("ITEMS", `${totalItems} items`),
+    fact("SECTIONS", `${totalSections} secciones`),
+    fact("CATEGORIES", `${categoryEntries().length} categorias`)
+  ];
+}
+
+function projectSidebarCard(project) {
+  const count = countItems(project);
+  const active = currentProject()?.id === project.id ? "active" : "";
+  return `<a class="project-card ${active}" href="project.html?id=${encodeURIComponent(project.id)}">
+    <strong>${escapeHtml(project.metadata.PROJECT || "Untitled Project")}</strong>
+    <small>${count} items - ${project.sections.length} secciones</small>
+    <small>${escapeHtml((project.tags || []).slice(0, 5).join(", "))}</small>
+  </a>`;
+}
+
+function projectLibraryCard(project) {
+  const items = countItems(project);
+  const genre = project.metadata.GENRE || project.tags?.[0] || "Sin categoria";
+  return `<a class="library-card" href="project.html?id=${encodeURIComponent(project.id)}">
+    <div class="library-card-head">
+      <strong>${escapeHtml(project.metadata.PROJECT || "Untitled Project")}</strong>
+      <span>${project.favorite ? "*" : "..."}</span>
+    </div>
+    <small>${formatDate(project.createdAt, false)}</small>
+    <span class="pill blue">${escapeHtml(genre)}</span>
+    <div class="library-card-stats">
+      <b>${project.sections.length}<span>Secciones</span></b>
+      <b>${items}<span>Items</span></b>
+    </div>
+  </a>`;
+}
+
+function emptyLibraryCard() {
+  return `<a class="library-card library-card-empty" href="new.html">
+    <strong>+</strong>
+    <span>Nuevo proyecto</span>
+  </a>`;
+}
+
+function metricCard(label, value, help) {
+  return `<article class="metric-card">
+    <span>${escapeHtml(label)}</span>
+    <strong>${escapeHtml(value)}</strong>
+    <small>${escapeHtml(help)}</small>
+  </article>`;
+}
+
+function quickRowTemplate(item, section, project = currentProject()) {
+  const label = section.name === "TRACKS" ? "TRACK" : section.name;
+  const name = project?.metadata?.PROJECT ? `<small>${escapeHtml(project.metadata.PROJECT)}</small>` : "";
+  return `<article class="quick-row ${item.used ? "used" : ""}">
+    <span class="badge ${label === "TRACK" ? "green" : ""}">${escapeHtml(label)}</span>
+    <strong>${escapeHtml(item.id || item.type || "prompt")}</strong>
+    <div class="quick-row-content">${name}<p>${escapeHtml(item.content)}</p></div>
+    <div class="quick-row-actions">
+      ${actionButton("copy", item, "CP", "Copiar")}
+      ${actionButton("used", item, item.used ? "OK" : "O", "Usado", item.used ? "used-icon" : "")}
+      ${actionButton("favorite", item, item.favorite ? "*" : "+", "Favorito", item.favorite ? "favorite-icon" : "")}
+      ${actionButton("like", item, "+", "Like", item.rating === "like" ? "rating-like" : "")}
+      ${actionButton("dislike", item, "-", "Dislike", item.rating === "dislike" ? "rating-dislike" : "")}
+      ${actionButton("expand", item, "...", "Mas opciones")}
+    </div>
+  </article>`;
+}
+
+function itemTemplate(item, index) {
+  const labels = [item.id, item.type, item.ratio].filter(Boolean);
+  return `<article class="item-card ${item.used ? "used" : ""} ${item.expanded ? "expanded" : ""}" style="top:${index * ITEM_HEIGHT + 8}px">
+    <div class="item-main">
+      <div class="item-title">
+        <strong>${escapeHtml(item.id || "Item")}</strong>
+        ${labels.map(label => pill(escapeHtml(label))).join("")}
+        ${item.used ? `<span class="pill used-pill">usado</span>` : ""}
+      </div>
+      <div class="item-content">${escapeHtml(item.content)}</div>
+    </div>
+    <div class="item-actions">
+      ${actionButton("copy", item, "CP", "Copiar")}
+      ${actionButton("used", item, item.used ? "OK" : "O", "Marcar usado", item.used ? "used-icon" : "")}
+      ${actionButton("favorite", item, item.favorite ? "*" : "+", "Favorito", item.favorite ? "favorite-icon" : "")}
+      ${actionButton("like", item, "+", "Like", item.rating === "like" ? "rating-like" : "")}
+      ${actionButton("dislike", item, "-", "Dislike", item.rating === "dislike" ? "rating-dislike" : "")}
+      ${actionButton("expand", item, item.expanded ? "^" : "...", "Expandir")}
+    </div>
+  </article>`;
+}
+
+function actionButton(action, item, icon, title, extraClass = "") {
+  return `<button class="icon-button ${extraClass}" title="${title}" data-action="${action}" data-item-key="${item.uid}">${icon}</button>`;
+}
+
+function filteredItems(section) {
+  return section.items.map((item, index) => ({ item, index })).filter(({ item }) => {
+    if (!state.query) return true;
+    return searchableText({ ...item, section: section.name }).includes(state.query);
+  });
+}
+
+function setSectionActionsDisabled(disabled) {
+  ["#copySectionBtn", "#markSectionUsedBtn", "#editSectionBtn"].forEach(selector => {
+    const button = qs(selector);
+    if (button) button.disabled = disabled;
+  });
 }
 
 function formatItem(item) {
@@ -860,11 +906,16 @@ function pill(text) {
 }
 
 function fact(icon, text, tag = false) {
-  return `<span class="fact"><span>${icon}</span>${tag ? `<b>${escapeHtml(text)}</b>` : escapeHtml(text)}</span>`;
+  return `<span class="fact"><span>${escapeHtml(icon)}</span>${tag ? `<b>${escapeHtml(text)}</b>` : escapeHtml(text)}</span>`;
 }
 
 function summaryRow(icon, label, value) {
-  return `<div class="summary-row"><span>${icon} ${escapeHtml(label)}</span><b>${escapeHtml(value)}</b></div>`;
+  return `<div class="summary-row"><span>${escapeHtml(icon)} ${escapeHtml(label)}</span><b>${escapeHtml(value)}</b></div>`;
+}
+
+function setText(selector, value) {
+  const element = qs(selector);
+  if (element) element.textContent = value;
 }
 
 function escapeHtml(value = "") {
@@ -877,8 +928,10 @@ function escapeHtml(value = "") {
 }
 
 function toast(message) {
-  els.toast.textContent = `✓ ${message}`;
-  els.toast.classList.add("visible");
+  const toastEl = qs("#toast");
+  if (!toastEl) return;
+  toastEl.textContent = `OK ${message}`;
+  toastEl.classList.add("visible");
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => els.toast.classList.remove("visible"), 1900);
+  toast.timer = setTimeout(() => toastEl.classList.remove("visible"), 1900);
 }
