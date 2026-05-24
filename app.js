@@ -1,5 +1,5 @@
-const STORAGE_KEY = "prompt-cms-projects-v1";
-const THEME_KEY = "prompt-cms-theme-v1";
+const STORAGE_KEY = "prompt-manager-projects-v1";
+const THEME_KEY = "prompt-manager-theme-v1";
 const ITEM_HEIGHT = 104;
 const OVERSCAN = 6;
 const OVERVIEW_INDEX = -1;
@@ -45,8 +45,9 @@ const qsa = selector => [...document.querySelectorAll(selector)];
 
 init();
 
-function init() {
+async function init() {
   document.documentElement.dataset.theme = localStorage.getItem(THEME_KEY) || "dark";
+  await initFS();
   bindCommon();
   if (page === "index") initIndex();
   if (page === "new") initNew();
@@ -77,6 +78,7 @@ function bindCommon() {
   qs("#allProjectsFilter")?.addEventListener("click", () => setFilter("all"));
   qs("#favoritesFilter")?.addEventListener("click", () => setFilter("favorites"));
   qs("#themeToggle")?.addEventListener("click", toggleTheme);
+  qs("#linkFileBtn")?.addEventListener("click", linkDataFile);
   qs("#backupBtn")?.addEventListener("click", exportBackup);
   qs("#importBtn")?.addEventListener("click", () => qs("#importFile")?.click());
   qs("#quickImportBtn")?.addEventListener("click", () => qs("#importFile")?.click());
@@ -181,7 +183,7 @@ function renderSidebar() {
 
   const projectList = qs("#projectList");
   if (projectList) {
-    projectList.innerHTML = visibleProjects().map(projectSidebarCard).join("") || `<div class="pill">No hay resultados</div>`;
+    projectList.innerHTML = visibleProjects().map(projectSidebarCard).join("") || `<div class="list-empty">No hay resultados</div>`;
   }
 }
 
@@ -831,6 +833,10 @@ function fallbackCopy(text) {
 
 function loadProjects() {
   try {
+    const legacy = localStorage.getItem("prompt-cms-projects-v1");
+    if (legacy && !localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, legacy);
+    }
     return normalizeProjects(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"));
   } catch {
     return [];
@@ -871,6 +877,7 @@ function normalizeProjects(projects) {
 
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.projects));
+  _saveToFile();
 }
 
 function downloadJson(filename, data) {
@@ -939,4 +946,85 @@ function toast(message) {
   toastEl.classList.add("visible");
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => toastEl.classList.remove("visible"), 1900);
+}
+
+// File System Access API — sincronización con data/projects.json
+let _fsHandle = null;
+
+async function _idb(mode, fn) {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("pmgr-fs", 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore("h");
+    req.onsuccess = e => fn(e.target.result.transaction("h", mode).objectStore("h"), resolve);
+    req.onerror = reject;
+  });
+}
+
+async function _getHandle() {
+  try { return await _idb("readonly", (store, res) => { store.get("main").onsuccess = e => res(e.target.result ?? null); }); }
+  catch { return null; }
+}
+
+async function _putHandle(h) {
+  try { await _idb("readwrite", (store, res) => { store.put(h, "main").onsuccess = res; }); }
+  catch {}
+}
+
+async function initFS() {
+  if (!("showSaveFilePicker" in window)) return;
+  _fsHandle = await _getHandle();
+  if (!_fsHandle) return;
+  try {
+    const perm = await _fsHandle.queryPermission({ mode: "readwrite" });
+    if (perm === "granted") {
+      await _loadFromFile();
+      qs("#linkFileBtn")?.classList.add("linked");
+    } else {
+      _fsHandle = null;
+    }
+  } catch { _fsHandle = null; }
+}
+
+async function _loadFromFile() {
+  if (!_fsHandle) return;
+  try {
+    const file = await _fsHandle.getFile();
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const projects = normalizeProjects(Array.isArray(data) ? data : (data.projects ?? []));
+    if (projects.length > 0) {
+      state.projects = projects;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+    }
+  } catch {}
+}
+
+async function _saveToFile() {
+  if (!_fsHandle) return;
+  try {
+    const perm = await _fsHandle.requestPermission({ mode: "readwrite" });
+    if (perm !== "granted") return;
+    const w = await _fsHandle.createWritable();
+    await w.write(JSON.stringify(state.projects, null, 2));
+    await w.close();
+  } catch {}
+}
+
+async function linkDataFile() {
+  if (!("showSaveFilePicker" in window)) {
+    toast("No disponible en este navegador");
+    return;
+  }
+  try {
+    _fsHandle = await window.showSaveFilePicker({
+      suggestedName: "projects.json",
+      types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
+    });
+    await _putHandle(_fsHandle);
+    const w = await _fsHandle.createWritable();
+    await w.write(JSON.stringify(state.projects, null, 2));
+    await w.close();
+    qs("#linkFileBtn")?.classList.add("linked");
+    toast("Archivo vinculado");
+  } catch {}
 }
